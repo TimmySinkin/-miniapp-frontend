@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
   Search,
   Plus,
   Star,
@@ -24,6 +23,8 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
   Globe2,
   GraduationCap,
 } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // ---------------------------------------------------------------------------
 // Static data
