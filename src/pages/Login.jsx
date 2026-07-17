@@ -359,7 +359,7 @@ function Login() {
     <div style={{
       minHeight: '100vh',
       width: '100vw',
-      background: 'url("/bg-login.png") center/cover no-repeat',
+      background: 'url("/bg-login.jpg") center/cover no-repeat',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       margin: 0, padding: 0
     }}>
