@@ -1,0 +1,10 @@
+.md-content p { margin: 0 0 8px; }
+.md-content p:last-child { margin-bottom: 0; }
+.md-content h2, .md-content h3, .md-content h4 { margin: 12px 0 6px; }
+.md-content ul { margin: 6px 0; padding-left: 20px; }
+.md-content code {
+  background: var(--bg); padding: 1px 5px; border-radius: 4px;
+  font-family: monospace; font-size: 13px;
+}
+.md-content strong { font-weight: 700; }
+.md-content em { font-style: italic; }
