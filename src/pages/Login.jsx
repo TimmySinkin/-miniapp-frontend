@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 const GOOGLE_CLIENT_ID = '893384076518-dpb5tg5dgmu06l00g605tu8pg1k9j03f.apps.googleusercontent.com'
 // Имя бота БЕЗ "@" — публичное, можно смело хранить во фронтенд-коде
 // (это не токен). Замените на username вашего бота из @BotFather.
-const TELEGRAM_BOT_USERNAME = 'your_bot_username'
+const TELEGRAM_BOT_USERNAME = 'MiniAppMon_bot'
 
 function Login() {
   const [login, setLogin] = useState('')
