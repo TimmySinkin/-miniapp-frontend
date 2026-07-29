@@ -11,7 +11,7 @@ const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.goo
 // Имя бота больше не нужно для кастомной кнопки (это было только для
 // встроенного iframe-виджета). bot_id — числовая часть токена бота
 // (публичная информация, не секрет, использовать во фронтенде безопасно).
-const TELEGRAM_BOT_ID = '8503699248'
+const TELEGRAM_BOT_ID = '8814230092'
 
 function Login() {
     const [login, setLogin] = useState('')
