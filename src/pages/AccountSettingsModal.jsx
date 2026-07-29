@@ -17,6 +17,7 @@ function AccountSettingsModal({ open, onClose }) {
   const [providers, setProviders] = useState(null)
   const [error, setError] = useState('')
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [telegramWidgetFailed, setTelegramWidgetFailed] = useState(false)
   const googleTokenClientRef = useRef(null)
   const telegramContainerRef = useRef(null)
 
@@ -103,6 +104,7 @@ function AccountSettingsModal({ open, onClose }) {
     if (!open || providers?.has_telegram) return
     if (!telegramContainerRef.current) return
     telegramContainerRef.current.innerHTML = ''
+    setTelegramWidgetFailed(false)
 
     window.onTelegramLinkAuth = async (userData) => {
       setError('')
@@ -129,6 +131,17 @@ function AccountSettingsModal({ open, onClose }) {
     script.setAttribute('data-request-access', 'write')
     script.async = true
     telegramContainerRef.current.appendChild(script)
+
+    // Виджет Telegram подменяет себя на iframe только если домен сайта
+    // привязан к боту через @BotFather → /setdomain (и никогда не работает
+    // на localhost). Если это не настроено, виджет молча остаётся пустым —
+    // без этой проверки кнопка просто "пропадает" без всякого объяснения.
+    const timeoutId = setTimeout(() => {
+      const hasIframe = telegramContainerRef.current?.querySelector('iframe')
+      if (!hasIframe) setTelegramWidgetFailed(true)
+    }, 3000)
+
+    return () => clearTimeout(timeoutId)
   }, [open, providers?.has_telegram])
 
   const handleUnlinkTelegram = async () => {
@@ -190,7 +203,14 @@ function AccountSettingsModal({ open, onClose }) {
               {providers.has_telegram ? (
                 <button onClick={handleUnlinkTelegram} style={btnStyle('#f4f5f9', '#1e2130')}>Отвязать</button>
               ) : (
-                <div ref={telegramContainerRef} />
+                <div style={{ textAlign: 'right' }}>
+                  <div ref={telegramContainerRef} />
+                  {telegramWidgetFailed && (
+                    <div style={{ fontSize: '11px', color: '#d64545', maxWidth: '170px' }}>
+                      Виджет Telegram не загрузился. Проверьте, что домен сайта привязан к боту через /setdomain у @BotFather (на localhost виджет не работает).
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </>
