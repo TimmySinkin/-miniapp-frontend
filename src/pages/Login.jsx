@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 // Вставьте сюда Client ID из Google Cloud Console (APIs & Services → Credentials).
 // Это публичный идентификатор — его наличие в клиентском коде не проблема безопасности,
 // в отличие от Client Secret, который тут не нужен вообще.
-const GOOGLE_CLIENT_ID = '893384076518-dpb5tg5dgmu06l00g605tu8pg1k9j03f.apps.googleusercontent.com'
+const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.googleusercontent.com'
 // Имя бота БЕЗ "@" — публичное, можно смело хранить во фронтенд-коде
 // (это не токен). Замените на username вашего бота из @BotFather.
 const TELEGRAM_BOT_USERNAME = 'MiniAppMon_bot'
