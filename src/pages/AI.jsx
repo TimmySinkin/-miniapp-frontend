@@ -22,7 +22,6 @@ import {
   Palette,
   Globe2,
   GraduationCap,
-  Settings,
 } from "lucide-react";
 import AccountSettingsModal from "./AccountSettingsModal";
 
@@ -772,7 +771,7 @@ function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-user">
+      <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar">{login ? login[0].toUpperCase() : "T"}</div>
         <span className="user-name">{login || "tim"}</span>
       </div>
@@ -795,9 +794,6 @@ function TopBar() {
           );
         })}
       </nav>
-      <button className="logout-btn" type="button" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта">
-        <Settings size={15} />
-      </button>
       <button className="logout-btn" type="button" onClick={handleLogout}>
         <LogOut size={15} />
         Выйти

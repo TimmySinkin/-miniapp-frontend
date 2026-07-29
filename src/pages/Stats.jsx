@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chart, registerables } from 'chart.js'
-import { Calendar, BarChart3, Target, LogOut, Settings } from 'lucide-react'
+import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
 import AccountSettingsModal from './AccountSettingsModal'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 Chart.register(...registerables)
@@ -336,7 +336,7 @@ function Stats() {
         {/* Навбар — та же разметка и те же классы, что и TopBar в AI.jsx,
             поэтому переход между страницами не "прыгает" по цветам/отступам. */}
         <header className="topbar">
-          <div className="topbar-user">
+          <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: 'pointer' }}>
             <div className="avatar">{login ? login[0].toUpperCase() : 'T'}</div>
             <span className="user-name">{login || 'tim'}</span>
           </div>
@@ -359,9 +359,6 @@ function Stats() {
               )
             })}
           </nav>
-          <button className="logout-btn" type="button" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта">
-            <Settings size={15} />
-          </button>
           <button className="logout-btn" type="button" onClick={() => {
             fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
               .finally(() => navigate('/login'))

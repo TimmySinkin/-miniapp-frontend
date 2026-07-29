@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, BarChart3, Target, LogOut, Settings } from 'lucide-react'
+import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
 import AccountSettingsModal from './AccountSettingsModal'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -433,11 +433,12 @@ function Home() {
         .home-nav-btn:hover:not(:disabled) { background: #f4f5f9 !important; }
         .home-nav-btn.active:hover:not(:disabled) { background: #efedff !important; }
         .home-logout-btn:hover { background: #f4f5f9 !important; }
+        .home-user-btn:hover { background: #f4f5f9; }
         .home-month-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .home-month-card:hover { transform: scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
       `}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: '24px', background: 'white', borderRadius: '12px', padding: '14px 28px', marginBottom: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="home-user-btn" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px', margin: '-4px -8px', transition: 'background 0.15s' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#efedff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#6a5cf5', fontSize: '13px', flexShrink: 0 }}>
             {login[0].toUpperCase()}
           </div>
@@ -473,17 +474,11 @@ function Home() {
           })}
         </nav>
 
-        <button className="home-logout-btn" onClick={() => setSettingsOpen(true)}
-          title="Настройки аккаунта"
-          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
-          <Settings size={16} />
-        </button>
-
         <button className="home-logout-btn" onClick={() => {
           fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
             .finally(() => navigate('/login'))
         }}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
           <LogOut size={15} />
           Выйти
         </button>
