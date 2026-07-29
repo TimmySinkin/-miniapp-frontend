@@ -22,7 +22,9 @@ import {
   Palette,
   Globe2,
   GraduationCap,
+  Settings,
 } from "lucide-react";
+import AccountSettingsModal from "./AccountSettingsModal";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -752,6 +754,7 @@ function Sidebar({
 function TopBar() {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -792,10 +795,14 @@ function TopBar() {
           );
         })}
       </nav>
+      <button className="logout-btn" type="button" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта">
+        <Settings size={15} />
+      </button>
       <button className="logout-btn" type="button" onClick={handleLogout}>
         <LogOut size={15} />
         Выйти
       </button>
+      <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>
   );
 }

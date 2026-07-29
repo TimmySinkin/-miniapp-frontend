@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
+import { Calendar, BarChart3, Target, LogOut, Settings } from 'lucide-react'
+import AccountSettingsModal from './AccountSettingsModal'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // Та же иконка робота, что в шапке AI-агента — чтобы значок был
@@ -88,6 +89,7 @@ function Home() {
   const [rows, setRows] = useState(emptyRows())
 
   const [authError, setAuthError] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Логин раньше читался напрямую из localStorage (жил там вечно). Теперь
   // источник правды — httpOnly cookie на сервере: /api/me её расшифровывает
@@ -471,15 +473,23 @@ function Home() {
           })}
         </nav>
 
+        <button className="home-logout-btn" onClick={() => setSettingsOpen(true)}
+          title="Настройки аккаунта"
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
+          <Settings size={16} />
+        </button>
+
         <button className="home-logout-btn" onClick={() => {
           fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
             .finally(() => navigate('/login'))
         }}
-          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
           <LogOut size={15} />
           Выйти
         </button>
       </div>
+
+      <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {MONTHS.map((name, i) => {

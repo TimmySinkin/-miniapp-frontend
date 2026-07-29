@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chart, registerables } from 'chart.js'
-import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
+import { Calendar, BarChart3, Target, LogOut, Settings } from 'lucide-react'
+import AccountSettingsModal from './AccountSettingsModal'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 Chart.register(...registerables)
 
@@ -143,6 +144,7 @@ function MiniCalendar({ year, month, currentDay, currentMonth, currentYear, week
 function Stats() {
   const navigate = useNavigate()
   const [login, setLogin] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const now = new Date()
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
@@ -357,6 +359,9 @@ function Stats() {
               )
             })}
           </nav>
+          <button className="logout-btn" type="button" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта">
+            <Settings size={15} />
+          </button>
           <button className="logout-btn" type="button" onClick={() => {
             fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
               .finally(() => navigate('/login'))
@@ -364,6 +369,7 @@ function Stats() {
             <LogOut size={15} />
             Выйти
           </button>
+          <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </header>
 
         {/* Основной контент */}
