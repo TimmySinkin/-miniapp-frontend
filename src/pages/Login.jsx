@@ -595,9 +595,9 @@ function Login() {
                         style={{ cursor: telegramLoading ? 'default' : 'pointer', opacity: telegramLoading ? 0.5 : 1 }}
                         title="Войти через Telegram"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 2 11 13" />
-                            <path d="M22 2 15 22 11 13 2 9 22 2z" />
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="12" fill="#29A9EA" />
+                            <path d="M17.5 7.2L15.6 17.1c-.14.63-.5.78-1.02.49l-2.82-2.08-1.36 1.31c-.15.15-.28.28-.57.28l.2-2.87 5.23-4.72c.23-.2-.05-.32-.35-.11l-6.46 4.07-2.78-.87c-.6-.19-.62-.6.13-.89l10.87-4.19c.5-.19.94.12.78.88z" fill="white" />
                         </svg>
                         {telegramLoading ? 'Входим...' : 'Telegram'}
                     </button>
