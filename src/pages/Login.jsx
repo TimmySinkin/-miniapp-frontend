@@ -8,7 +8,10 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.googleusercontent.com'
 // Имя бота БЕЗ "@" — публичное, можно смело хранить во фронтенд-коде
 // (это не токен). Замените на username вашего бота из @BotFather.
-const TELEGRAM_BOT_USERNAME = 'MiniAppMon_bot'
+// Имя бота больше не нужно для кастомной кнопки (это было только для
+// встроенного iframe-виджета). bot_id — числовая часть токена бота
+// (публичная информация, не секрет, использовать во фронтенде безопасно).
+const TELEGRAM_BOT_ID = '8503699248'
 
 function Login() {
   const [login, setLogin] = useState('')
@@ -24,6 +27,7 @@ function Login() {
   const googleTokenClientRef = useRef(null)
   const googleAccessTokenRef = useRef(null)
   const telegramAuthDataRef = useRef(null)
+  const [telegramLoading, setTelegramLoading] = useState(false)
 
   // Если это первый вход через Google/Telegram — вместо автогенерации логина
   // вида "google_1071206192" спрашиваем у пользователя, как к нему обращаться.
@@ -225,57 +229,64 @@ function Login() {
     }
   }, [navigate])
 
-  // Telegram Login Widget: рендерится самим Telegram в iframe (нельзя
-  // стилизовать так же гибко, как кастомную Google-кнопку — таковы их
-  // требования безопасности, чтобы страницы не могли подделать кнопку).
-  // window.onTelegramAuth — глобальный колбэк, который вызовет сам виджет
-  // после успешной авторизации пользователя в Telegram.
+  // Вместо встроенного iframe-виджета (который сам решает, что показывать —
+  // например, "Войти как Имя", если в браузере уже открыта сессия
+  // telegram.org, и это никак не перестилизовать) используем официальный
+  // JS-метод Telegram.Login.auth() — он открывает всплывающее окно, а сама
+  // кнопка на странице полностью наша, как и у Google.
   useEffect(() => {
-    window.onTelegramAuth = async (user) => {
-      setError('')
-      telegramAuthDataRef.current = user
-      try {
-        const res = await fetch(`${API_BASE}/api/oauth/telegram`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ ...user, rememberMe: String(rememberMe) })
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.status === 'needsOnboarding') {
-            setOnboardingProvider('telegram')
-            setOnboardingLogin(data.suggestedLogin || '')
-            setOnboarding(true)
-          } else {
-            navigate('/home')
-          }
-        } else {
-          setError(await res.text())
-        }
-      } catch (e) {
-        setError('Сервер недоступен')
-      }
-    }
-
-    const containerId = 'telegram-login-container'
-    const container = document.getElementById(containerId)
-    if (!container || container.childElementCount > 0) return
-
+    const scriptId = 'telegram-widget-script'
+    if (document.getElementById(scriptId)) return
     const script = document.createElement('script')
+    script.id = scriptId
     script.src = 'https://telegram.org/js/telegram-widget.js?22'
     script.async = true
-    script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME)
-    script.setAttribute('data-size', 'large')
-    script.setAttribute('data-radius', '10')
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)')
-    script.setAttribute('data-request-access', 'write')
-    container.appendChild(script)
+    document.body.appendChild(script)
+  }, [])
 
-    return () => {
-      delete window.onTelegramAuth
+  const handleTelegramLogin = () => {
+    if (!window.Telegram || !window.Telegram.Login) {
+      setError('Telegram ещё не готов, попробуйте через секунду')
+      return
     }
-  }, [navigate, rememberMe])
+    setError('')
+    setTelegramLoading(true)
+    window.Telegram.Login.auth(
+      { bot_id: TELEGRAM_BOT_ID, request_access: 'write' },
+      async (user) => {
+        if (!user) {
+          // Пользователь закрыл всплывающее окно, ничего не подтвердив.
+          setTelegramLoading(false)
+          return
+        }
+        telegramAuthDataRef.current = user
+        try {
+          const res = await fetch(`${API_BASE}/api/oauth/telegram`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ ...user, rememberMe: String(rememberMe) })
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.status === 'needsOnboarding') {
+              setOnboardingProvider('telegram')
+              setOnboardingLogin(data.suggestedLogin || '')
+              setOnboarding(true)
+            } else {
+              navigate('/home')
+            }
+          } else {
+            setError(await res.text())
+          }
+        } catch (e) {
+          setError('Сервер недоступен')
+        } finally {
+          setTelegramLoading(false)
+        }
+      }
+    )
+  }
 
   const handleGoogleLogin = () => {
     if (!googleTokenClientRef.current) {
@@ -576,7 +587,20 @@ function Login() {
             <img src="/google.png" alt="Google" width="18" height="18" />
             {googleLoading ? 'Входим...' : 'Google'}
           </button>
-          <div id="telegram-login-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+          <button
+            type="button"
+            className="social-btn-wide"
+            onClick={handleTelegramLogin}
+            disabled={telegramLoading}
+            style={{ cursor: telegramLoading ? 'default' : 'pointer', opacity: telegramLoading ? 0.5 : 1 }}
+            title="Войти через Telegram"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="12" fill="#29A9EA" />
+              <path d="M17.5 7.2L15.6 17.1c-.14.63-.5.78-1.02.49l-2.82-2.08-1.36 1.31c-.15.15-.28.28-.57.28l.2-2.87 5.23-4.72c.23-.2-.05-.32-.35-.11l-6.46 4.07-2.78-.87c-.6-.19-.62-.6.13-.89l10.87-4.19c.5-.19.94.12.78.88z" fill="white" />
+            </svg>
+            {telegramLoading ? 'Входим...' : 'Telegram'}
+          </button>
         </div>
 
         {/* Нет аккаунта */}
