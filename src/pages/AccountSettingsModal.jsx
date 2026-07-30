@@ -349,6 +349,21 @@ function AccountSettingsModal({ open, onClose }) {
             transition: border-color 150ms cubic-bezier(0.4,0,0.2,1);
           }
           .asm-glass-input:focus { border-color: #6a5cf5; }
+          /* Браузер красит автозаполненные поля своим фоном (обычно серым/жёлтым),
+             который обычным background не перебить — нужен именно этот трюк
+             с огромной inset-тенью цвета нашего инпута. */
+          .asm-glass-input:-webkit-autofill,
+          .asm-glass-input:-webkit-autofill:hover,
+          .asm-glass-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #1e2130;
+            -webkit-box-shadow: 0 0 0px 1000px #efedff inset;
+            box-shadow: 0 0 0px 1000px #efedff inset;
+            transition: background-color 9999s ease-in-out 0s;
+          }
+          .asm-glass-input.asm-readonly:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px #f4f5f9 inset;
+            box-shadow: 0 0 0px 1000px #f4f5f9 inset;
+          }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
           .asm-floating-label {
             position: absolute; left: 14px; top: 50%;
@@ -376,9 +391,11 @@ function AccountSettingsModal({ open, onClose }) {
             border: none; background: transparent; border-radius: 8px;
             padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
             transition: background 150ms ease, color 150ms ease;
+            outline: none; box-shadow: none; -webkit-appearance: none; appearance: none;
           }
+          .asm-btn:focus { outline: none; box-shadow: none; }
           .asm-btn-save { color: #1e2130; }
-          .asm-btn-save:hover:not(:disabled) { background: #efedff; color: #6a5cf5; }
+          .asm-btn-save:hover:not(:disabled) { background: transparent; color: #6a5cf5; }
           .asm-btn-save:disabled { color: #8b8fa3; cursor: default; }
           .asm-btn-cancel { color: #8b8fa3; }
           .asm-btn-cancel:hover { background: #f4f5f9; color: #1e2130; }
@@ -523,7 +540,8 @@ function AccountSettingsModal({ open, onClose }) {
                         id="asm-current-password-field"
                         className="asm-glass-input"
                         type={showCurrentPassword ? 'text' : 'password'}
-                        autoComplete="off"
+                        autoComplete="current-password"
+                        name="current-password"
                         value={currentPassword}
                         onChange={e => setCurrentPassword(e.target.value)}
                         onFocus={() => setCurrentPasswordFocused(true)}
@@ -558,7 +576,8 @@ function AccountSettingsModal({ open, onClose }) {
                       id="asm-new-password-field"
                       className="asm-glass-input"
                       type={showNewPassword ? 'text' : 'password'}
-                      autoComplete="off"
+                      autoComplete="new-password"
+                      name="new-password"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
                       onFocus={() => setNewPasswordFocused(true)}
