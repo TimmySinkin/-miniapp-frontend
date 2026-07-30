@@ -79,6 +79,7 @@ const emptyRows = () => ([
 function Home() {
   const navigate = useNavigate()
   const [login, setLogin] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const year = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
@@ -90,6 +91,16 @@ function Home() {
 
   const [authError, setAuthError] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Аватарка живёт отдельно от /api/me — тянем её из того же
+  // эндпоинта, что и модалка настроек, и обновляем при закрытии
+  // модалки, чтобы новое фото сразу подхватывалось в шапке.
+  const loadAvatar = () => {
+    fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setAvatarUrl(data.avatar_url) })
+      .catch(() => {})
+  }
 
   // Логин раньше читался напрямую из localStorage (жил там вечно). Теперь
   // источник правды — httpOnly cookie на сервере: /api/me её расшифровывает
@@ -110,6 +121,7 @@ function Home() {
         if (cancelled || !data) return
         setLogin(data.login)
         setAuthChecked(true)
+        loadAvatar()
       })
       .catch((e) => {
         // Не редиректим молча на /login — если бэкенд просто недоступен
@@ -439,8 +451,13 @@ function Home() {
       `}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: '24px', background: 'white', borderRadius: '12px', padding: '14px 28px', marginBottom: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', position: 'relative' }}>
         <div className="home-user-btn" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px', margin: '-4px -8px', transition: 'background 0.15s' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#efedff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#6a5cf5', fontSize: '13px', flexShrink: 0 }}>
-            {login[0].toUpperCase()}
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '50%',
+            background: avatarUrl ? `url(${avatarUrl}) center/cover` : '#efedff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: '700', color: '#6a5cf5', fontSize: '13px', flexShrink: 0
+          }}>
+            {!avatarUrl && login[0].toUpperCase()}
           </div>
           <span style={{ fontSize: '14px', color: '#1e2130' }}>{login}</span>
         </div>
@@ -484,7 +501,7 @@ function Home() {
         </button>
       </div>
 
-      <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar() }} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {MONTHS.map((name, i) => {

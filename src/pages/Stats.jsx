@@ -144,8 +144,19 @@ function MiniCalendar({ year, month, currentDay, currentMonth, currentYear, week
 function Stats() {
   const navigate = useNavigate()
   const [login, setLogin] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const now = new Date()
+
+  // Аватарка тянется отдельно от /api/me, из того же эндпоинта, что
+  // и модалка настроек — обновляем при закрытии модалки, чтобы новое
+  // фото сразу подхватывалось в шапке.
+  const loadAvatar = () => {
+    fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setAvatarUrl(data.avatar_url) })
+      .catch(() => {})
+  }
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
   const currentDay = now.getDate()
@@ -176,6 +187,7 @@ function Stats() {
       .then(data => {
         if (cancelled) return
         setLogin(data.login)
+        loadAvatar()
         return fetch(`${API_BASE}/api/stats/${data.login}`, { credentials: 'include' })
       })
       .then(res => res && res.json())
@@ -337,7 +349,9 @@ function Stats() {
             поэтому переход между страницами не "прыгает" по цветам/отступам. */}
         <header className="topbar">
           <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: 'pointer' }}>
-            <div className="avatar">{login ? login[0].toUpperCase() : 'T'}</div>
+            <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
+              {!avatarUrl && (login ? login[0].toUpperCase() : 'T')}
+            </div>
             <span className="user-name">{login || 'tim'}</span>
           </div>
           <nav className="topbar-nav">
@@ -366,7 +380,7 @@ function Stats() {
             <LogOut size={15} />
             Выйти
           </button>
-          <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+          <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar() }} />
         </header>
 
         {/* Основной контент */}
