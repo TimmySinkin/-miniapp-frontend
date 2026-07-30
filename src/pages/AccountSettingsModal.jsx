@@ -234,7 +234,7 @@ function AccountSettingsModal({ open, onClose }) {
   // ─── Смена пароля ───
   const handleChangePassword = async () => {
     if (passwordSubmitting) return
-    if (!currentPassword) {
+    if (providers.has_password && !currentPassword) {
       setPasswordError('Введите текущий пароль')
       return
     }
@@ -254,10 +254,11 @@ function AccountSettingsModal({ open, onClose }) {
       })
       const text = await res.text()
       if (res.ok) {
-        setPasswordInfo('Пароль изменён')
+        setPasswordInfo(providers.has_password ? 'Пароль изменён' : 'Пароль добавлен')
         setCurrentPassword('')
         setNewPassword('')
         setShowPasswordFields(false)
+        await loadProviders() // has_password теперь true — при следующем открытии покажем "Изменить" и поле "Текущий пароль"
       } else {
         setPasswordError(text)
       }
@@ -374,19 +375,23 @@ function AccountSettingsModal({ open, onClose }) {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Пароль</div>
                   <button onClick={() => { setShowPasswordFields(true); setPasswordInfo('') }} style={btnStyle('#f4f5f9', '#1e2130')}>
-                    Изменить
+                    {providers.has_password ? 'Изменить' : 'Добавить'}
                   </button>
                 </div>
               ) : (
                 <div>
-                  <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500', marginBottom: '10px' }}>Смена пароля</div>
-                  <input
-                    type="password"
-                    placeholder="Текущий пароль"
-                    value={currentPassword}
-                    onChange={e => setCurrentPassword(e.target.value)}
-                    style={inputStyle}
-                  />
+                  <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500', marginBottom: '10px' }}>
+                    {providers.has_password ? 'Смена пароля' : 'Добавление пароля'}
+                  </div>
+                  {providers.has_password && (
+                    <input
+                      type="password"
+                      placeholder="Текущий пароль"
+                      value={currentPassword}
+                      onChange={e => setCurrentPassword(e.target.value)}
+                      style={inputStyle}
+                    />
+                  )}
                   <input
                     type="password"
                     placeholder="Новый пароль"
