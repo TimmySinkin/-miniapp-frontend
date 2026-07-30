@@ -1193,7 +1193,11 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
       });
 
       if (!response.ok) {
-        throw new Error(`Сервер ответил статусом ${response.status}`);
+        // Раньше тут терялось тело ответа (там как раз лежит настоящий текст
+        // ошибки от бэкенда, например "Ошибка: <сообщение исключения>") —
+        // пользователь видел только код статуса и гадал, что случилось.
+        const bodyText = await response.text().catch(() => "");
+        throw new Error(bodyText || `Сервер ответил статусом ${response.status}`);
       }
 
       const reply = await response.text();
