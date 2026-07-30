@@ -145,16 +145,17 @@ function Stats() {
   const navigate = useNavigate()
   const [login, setLogin] = useState(null)
   const [avatarUrl, setAvatarUrl] = useState(null)
+  const [displayName, setDisplayName] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const now = new Date()
 
-  // Аватарка тянется отдельно от /api/me, из того же эндпоинта, что
+  // Аватарка и имя тянутся отдельно от /api/me, из того же эндпоинта, что
   // и модалка настроек — обновляем при закрытии модалки, чтобы новое
-  // фото сразу подхватывалось в шапке.
-  const loadAvatar = () => {
+  // фото/имя сразу подхватывались в шапке.
+  const loadProfile = () => {
     fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) setAvatarUrl(data.avatar_url) })
+      .then(data => { if (data) { setAvatarUrl(data.avatar_url); setDisplayName(data.name || null) } })
       .catch(() => {})
   }
   const currentYear = now.getFullYear()
@@ -187,7 +188,7 @@ function Stats() {
       .then(data => {
         if (cancelled) return
         setLogin(data.login)
-        loadAvatar()
+        loadProfile()
         return fetch(`${API_BASE}/api/stats/${data.login}`, { credentials: 'include' })
       })
       .then(res => res && res.json())
@@ -350,9 +351,9 @@ function Stats() {
         <header className="topbar">
           <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: 'pointer' }}>
             <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
-              {!avatarUrl && (login ? login[0].toUpperCase() : 'T')}
+              {!avatarUrl && (displayName || login ? (displayName || login)[0].toUpperCase() : 'T')}
             </div>
-            <span className="user-name">{login || 'tim'}</span>
+            <span className="user-name">{displayName || login || 'tim'}</span>
           </div>
           <nav className="topbar-nav">
             {NAV_ITEMS.map(item => {
@@ -380,7 +381,7 @@ function Stats() {
             <LogOut size={15} />
             Выйти
           </button>
-          <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar() }} />
+          <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
         </header>
 
         {/* Основной контент */}

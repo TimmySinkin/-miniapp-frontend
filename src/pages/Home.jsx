@@ -80,6 +80,7 @@ function Home() {
   const navigate = useNavigate()
   const [login, setLogin] = useState(null)
   const [avatarUrl, setAvatarUrl] = useState(null)
+  const [displayName, setDisplayName] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const year = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
@@ -92,13 +93,13 @@ function Home() {
   const [authError, setAuthError] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Аватарка живёт отдельно от /api/me — тянем её из того же
+  // Аватарка и имя живут отдельно от /api/me — тянем их из того же
   // эндпоинта, что и модалка настроек, и обновляем при закрытии
-  // модалки, чтобы новое фото сразу подхватывалось в шапке.
-  const loadAvatar = () => {
+  // модалки, чтобы новое фото/имя сразу подхватывались в шапке.
+  const loadProfile = () => {
     fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) setAvatarUrl(data.avatar_url) })
+      .then(data => { if (data) { setAvatarUrl(data.avatar_url); setDisplayName(data.name || null) } })
       .catch(() => {})
   }
 
@@ -121,7 +122,7 @@ function Home() {
         if (cancelled || !data) return
         setLogin(data.login)
         setAuthChecked(true)
-        loadAvatar()
+        loadProfile()
       })
       .catch((e) => {
         // Не редиректим молча на /login — если бэкенд просто недоступен
@@ -457,9 +458,9 @@ function Home() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: '700', color: '#6a5cf5', fontSize: '13px', flexShrink: 0
           }}>
-            {!avatarUrl && login[0].toUpperCase()}
+            {!avatarUrl && (displayName || login)[0].toUpperCase()}
           </div>
-          <span style={{ fontSize: '14px', color: '#1e2130' }}>{login}</span>
+          <span style={{ fontSize: '14px', color: '#1e2130' }}>{displayName || login}</span>
         </div>
 
         <nav style={{ display: 'flex', gap: '6px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
@@ -501,7 +502,7 @@ function Home() {
         </button>
       </div>
 
-      <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar() }} />
+      <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {MONTHS.map((name, i) => {
