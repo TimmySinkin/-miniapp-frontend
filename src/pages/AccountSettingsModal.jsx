@@ -365,6 +365,9 @@ function AccountSettingsModal({ open, onClose }) {
             box-shadow: 0 0 0px 1000px #f4f5f9 inset;
           }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
+          .asm-glass-input.asm-notched {
+            clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
+          }
           .asm-floating-label {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
@@ -456,22 +459,25 @@ function AccountSettingsModal({ open, onClose }) {
             </div>
 
             {/* Как к вам обращаться (редактируется) + Логин (только отображение), в два столбца */}
-            <div style={{ display: 'flex', gap: '12px', padding: '0 0 18px' }}>
-              <div className="asm-input-group" style={{ flex: 1, minWidth: 0 }}>
-                <input
-                  id="asm-name-field"
-                  className="asm-glass-input"
-                  type="text"
-                  autoComplete="off"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  onFocus={() => setNameFocused(true)}
-                  onBlur={() => { setNameFocused(false); handleSaveName() }}
-                  onKeyDown={e => e.key === 'Enter' && e.target.blur()}
-                />
-                <label className={'asm-floating-label' + (nameFocused || name ? ' asm-floated' : '')} htmlFor="asm-name-field">
-                  Как к вам обращаться
-                </label>
+            <div style={{ display: 'flex', gap: '18px', padding: '0 0 18px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Как к вам обращаться</div>
+                <div className="asm-input-group">
+                  <input
+                    id="asm-name-field"
+                    className="asm-glass-input asm-notched"
+                    type="text"
+                    autoComplete="off"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => { setNameFocused(false); handleSaveName() }}
+                    onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                  />
+                  <label className={'asm-floating-label' + (nameFocused || name ? ' asm-floated' : '')} htmlFor="asm-name-field">
+                    Имя
+                  </label>
+                </div>
                 {nameSaving && (
                   <div style={{ fontSize: '11px', color: '#8b8fa3', marginTop: '4px' }}>Сохраняем...</div>
                 )}
@@ -479,16 +485,11 @@ function AccountSettingsModal({ open, onClose }) {
                   <div style={{ color: '#d64545', fontSize: '12px', marginTop: '4px' }}>{nameError}</div>
                 )}
               </div>
-              <div className="asm-input-group" style={{ flex: 1, minWidth: 0 }}>
-                <input
-                  id="asm-login-field"
-                  className="asm-glass-input asm-readonly"
-                  type="text"
-                  value={providers.login || ''}
-                  readOnly
-                  tabIndex={-1}
-                />
-                <label className="asm-floating-label asm-floated" htmlFor="asm-login-field">Логин</label>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Логин</div>
+                <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e2130', padding: '9px 0' }}>
+                  {providers.login}
+                </div>
               </div>
             </div>
 
