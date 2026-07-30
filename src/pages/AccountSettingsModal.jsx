@@ -366,6 +366,7 @@ function AccountSettingsModal({ open, onClose }) {
           }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
           .asm-glass-input.asm-notched {
+            border-top-left-radius: 0;
             clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
           }
           .asm-floating-label {
