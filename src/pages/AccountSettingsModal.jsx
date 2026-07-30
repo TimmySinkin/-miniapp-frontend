@@ -365,10 +365,26 @@ function AccountSettingsModal({ open, onClose }) {
             box-shadow: 0 0 0px 1000px #f4f5f9 inset;
           }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
-          .asm-glass-input.asm-notched {
-            border-top-left-radius: 0;
-            clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
+          /* Скруглённый вырез в углу: обычный border-radius/clip-path даёт либо
+             острый угол, либо просто срезает скругление. Вместо этого кладём
+             сверху маленький квадрат цвета фона модалки со своим скруглённым
+             углом и своей же обводкой — визуально получается гладкий вырез
+             со скруглением, а не просто прямой срез. */
+          .asm-notched-wrap { position: relative; }
+          .asm-notched-wrap::before {
+            content: '';
+            position: absolute;
+            top: -1.5px; left: -1.5px;
+            width: 20px; height: 20px;
+            background: white;
+            border-bottom-right-radius: 14px;
+            border-right: 1.5px solid #e0e2eb;
+            border-bottom: 1.5px solid #e0e2eb;
+            z-index: 2;
+            pointer-events: none;
+            transition: border-color 150ms cubic-bezier(0.4,0,0.2,1);
           }
+          .asm-notched-wrap:focus-within::before { border-color: #6a5cf5; }
           .asm-floating-label {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
@@ -376,6 +392,7 @@ function AccountSettingsModal({ open, onClose }) {
             pointer-events: none;
             transition: 150ms cubic-bezier(0.4,0,0.2,1);
             font-size: 13.5px;
+            z-index: 3;
           }
           .asm-floating-label.asm-floated {
             top: 0; left: 10px;
@@ -463,10 +480,10 @@ function AccountSettingsModal({ open, onClose }) {
             <div style={{ display: 'flex', gap: '18px', padding: '0 0 18px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Как к вам обращаться</div>
-                <div className="asm-input-group">
+                <div className="asm-input-group asm-notched-wrap">
                   <input
                     id="asm-name-field"
-                    className="asm-glass-input asm-notched"
+                    className="asm-glass-input"
                     type="text"
                     autoComplete="off"
                     value={name}
