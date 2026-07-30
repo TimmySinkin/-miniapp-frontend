@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 // Вынесите в общий src/config.js вместе с копией из Login.jsx, чтобы не
 // держать одно и то же значение в нескольких файлах.
 const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.googleusercontent.com'
-const TELEGRAM_BOT_ID = '8503699248'
+const TELEGRAM_BOT_ID = '8814230092'
 
 /**
  * Модалка со списком способов входа и кнопками привязать/отвязать
@@ -20,6 +20,29 @@ function AccountSettingsModal({ open, onClose }) {
   const [telegramLoading, setTelegramLoading] = useState(false)
   const googleTokenClientRef = useRef(null)
 
+  // ─── Аватар ───
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const avatarInputRef = useRef(null)
+
+  // ─── Смена пароля ───
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [showPasswordFields, setShowPasswordFields] = useState(false)
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordInfo, setPasswordInfo] = useState('')
+
+  // Те же правила, что в Login.jsx для сброса пароля — держим одинаковыми,
+  // иначе бэкенд отклонит пароль, который фронт считает валидным.
+  const PASSWORD_RULES = [
+    { key: 'length', label: 'Минимум 6 символов', test: (p) => p.length >= 6 },
+    { key: 'upper', label: 'Начинается с заглавной буквы', test: (p) => /^[A-Z]/.test(p) },
+    { key: 'digitOrSpecial', label: 'Содержит цифру или спецсимвол', test: (p) => /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?~`]/.test(p) },
+    { key: 'latinOnly', label: 'Только латиница (без кириллицы)', test: (p) => p.length === 0 || /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?~`]*$/.test(p) },
+  ]
+  const newPasswordOk = PASSWORD_RULES.every(r => r.test(newPassword))
+
   const loadProviders = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
@@ -31,6 +54,15 @@ function AccountSettingsModal({ open, onClose }) {
 
   useEffect(() => {
     if (open) loadProviders()
+    else {
+      // Модалку закрыли — не тащим введённый пароль и ошибки в следующее открытие.
+      setCurrentPassword('')
+      setNewPassword('')
+      setShowPasswordFields(false)
+      setPasswordError('')
+      setPasswordInfo('')
+      setAvatarError('')
+    }
   }, [open])
 
   // Esc закрывает модалку
@@ -155,6 +187,87 @@ function AccountSettingsModal({ open, onClose }) {
     else setError(text)
   }
 
+  // ─── Аватар: файл сразу грузим на сервер по выбору, без отдельной
+  // кнопки "Сохранить" — так проще, а превью показываем оптимистично,
+  // пока идёт запрос.
+  const handleAvatarPick = () => {
+    avatarInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // чтобы повторный выбор того же файла тоже сработал
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Можно загрузить только изображение')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Файл слишком большой (максимум 5 МБ)')
+      return
+    }
+
+    setAvatarError('')
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      const res = await fetch(`${API_BASE}/api/account/avatar`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData // без Content-Type — браузер сам проставит multipart-границу
+      })
+      const text = await res.text()
+      if (res.ok) {
+        await loadProviders()
+      } else {
+        setAvatarError(text)
+      }
+    } catch (e) {
+      setAvatarError('Сервер недоступен')
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  // ─── Смена пароля ───
+  const handleChangePassword = async () => {
+    if (passwordSubmitting) return
+    if (!currentPassword) {
+      setPasswordError('Введите текущий пароль')
+      return
+    }
+    if (!newPasswordOk) {
+      setPasswordError('Новый пароль не соответствует требованиям ниже')
+      return
+    }
+    setPasswordError('')
+    setPasswordInfo('')
+    setPasswordSubmitting(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/account/change-password`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      })
+      const text = await res.text()
+      if (res.ok) {
+        setPasswordInfo('Пароль изменён')
+        setCurrentPassword('')
+        setNewPassword('')
+        setShowPasswordFields(false)
+      } else {
+        setPasswordError(text)
+      }
+    } catch (e) {
+      setPasswordError('Сервер недоступен')
+    } finally {
+      setPasswordSubmitting(false)
+    }
+  }
+
   if (!open) return null
 
   return (
@@ -173,7 +286,7 @@ function AccountSettingsModal({ open, onClose }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', color: '#1e2130' }}>Настройки аккаунта</h3>
+          <h3 style={{ margin: 0, fontSize: '18px', color: '#1e2130' }}>Редактирование профиля</h3>
           <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#8b8fa3' }}>
             <X size={20} />
           </button>
@@ -187,7 +300,47 @@ function AccountSettingsModal({ open, onClose }) {
               <p style={{ color: '#d64545', fontSize: '13px', marginBottom: '12px' }}>{error}</p>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #eee' }}>
+            {/* Аватар */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '4px 0 18px' }}>
+              <div
+                onClick={handleAvatarPick}
+                style={{
+                  width: '56px', height: '56px', borderRadius: '50%',
+                  background: providers.avatar_url ? `url(${providers.avatar_url}) center/cover` : '#efedff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                  color: '#6a5cf5', fontSize: '20px', fontWeight: '600'
+                }}
+                title="Сменить аватар"
+              >
+                {!providers.avatar_url && (providers.login ? providers.login[0].toUpperCase() : '?')}
+                {avatarUploading && (
+                  <div style={{
+                    position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#6a5cf5'
+                  }}>
+                    ...
+                  </div>
+                )}
+              </div>
+              <div>
+                <button onClick={handleAvatarPick} disabled={avatarUploading} style={btnStyle('#f4f5f9', '#1e2130')}>
+                  {avatarUploading ? 'Загружаем...' : 'Сменить фото'}
+                </button>
+                {avatarError && (
+                  <div style={{ color: '#d64545', fontSize: '12px', marginTop: '6px' }}>{avatarError}</div>
+                )}
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #eee', borderTop: '1px solid #eee' }}>
               <div>
                 <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Google</div>
                 {providers.email && <div style={{ fontSize: '12px', color: '#8b8fa3' }}>{providers.email}</div>}
@@ -201,7 +354,7 @@ function AccountSettingsModal({ open, onClose }) {
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #eee' }}>
               <div>
                 <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Telegram</div>
                 {providers.telegram_username && <div style={{ fontSize: '12px', color: '#8b8fa3' }}>@{providers.telegram_username}</div>}
@@ -212,6 +365,79 @@ function AccountSettingsModal({ open, onClose }) {
                 <button onClick={handleLinkTelegram} disabled={telegramLoading} style={btnStyle('#efedff', '#6a5cf5')}>
                   {telegramLoading ? 'Проверяем...' : 'Привязать'}
                 </button>
+              )}
+            </div>
+
+            {/* Смена пароля */}
+            <div style={{ padding: '12px 0 0' }}>
+              {!showPasswordFields ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Пароль</div>
+                  <button onClick={() => { setShowPasswordFields(true); setPasswordInfo('') }} style={btnStyle('#f4f5f9', '#1e2130')}>
+                    Изменить
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500', marginBottom: '10px' }}>Смена пароля</div>
+                  <input
+                    type="password"
+                    placeholder="Текущий пароль"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="password"
+                    placeholder="Новый пароль"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+                    style={inputStyle}
+                  />
+                  {newPassword.length > 0 && (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0' }}>
+                      {PASSWORD_RULES.map(rule => {
+                        const pass = rule.test(newPassword)
+                        return (
+                          <li key={rule.key} style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            fontSize: '12px', marginBottom: '3px',
+                            color: pass ? '#1a9e6a' : '#8b8fa3'
+                          }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: '14px', height: '14px', borderRadius: '50%',
+                              border: pass ? 'none' : '1px solid #ccc',
+                              background: pass ? '#1a9e6a' : 'transparent',
+                              color: 'white', fontSize: '9px', flexShrink: 0
+                            }}>
+                              {pass ? '✓' : ''}
+                            </span>
+                            {rule.label}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  {passwordError && (
+                    <p style={{ color: '#d64545', fontSize: '12px', marginBottom: '8px' }}>{passwordError}</p>
+                  )}
+                  {passwordInfo && !passwordError && (
+                    <p style={{ color: '#1a9e6a', fontSize: '12px', marginBottom: '8px' }}>{passwordInfo}</p>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={handleChangePassword} disabled={passwordSubmitting} style={btnStyle('#efedff', '#6a5cf5')}>
+                      {passwordSubmitting ? 'Сохраняем...' : 'Сохранить'}
+                    </button>
+                    <button
+                      onClick={() => { setShowPasswordFields(false); setCurrentPassword(''); setNewPassword(''); setPasswordError('') }}
+                      style={btnStyle('#f4f5f9', '#1e2130')}
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </>
@@ -226,6 +452,12 @@ function btnStyle(bg, color) {
     border: 'none', background: bg, color, borderRadius: '8px',
     padding: '7px 14px', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
   }
+}
+
+const inputStyle = {
+  width: '100%', boxSizing: 'border-box', padding: '10px 12px', marginBottom: '8px',
+  border: '1px solid #e0e2eb', borderRadius: '8px', fontSize: '13px',
+  color: '#1e2130', outline: 'none', fontFamily: 'inherit'
 }
 
 export default AccountSettingsModal

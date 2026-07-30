@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 // Те же значения, что в Login.jsx — вынесите в общий файл констант,
 // чтобы не дублировать при следующем изменении.
 const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.googleusercontent.com'
-const TELEGRAM_BOT_ID = '8503699248'
+const TELEGRAM_BOT_ID = '8814230092'
 
 /**
  * Блок "Привязанные способы входа" для страницы настроек аккаунта.
