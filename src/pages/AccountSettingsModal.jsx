@@ -382,29 +382,39 @@ function AccountSettingsModal({ open, onClose }) {
               />
             </div>
 
-            {/* Логин (только отображение) + имя (редактируется) */}
-            <div style={{ padding: '0 0 18px' }}>
-              <div style={{ fontSize: '13px', color: '#8b8fa3', marginBottom: '12px' }}>
-                Логин: <span style={{ color: '#1e2130', fontWeight: '600' }}>{providers.login}</span>
+            {/* Как к вам обращаться (редактируется) + Логин (только отображение), в два столбца */}
+            <div style={{ display: 'flex', gap: '18px', padding: '0 0 18px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <label style={{ fontSize: '12px', color: '#8b8fa3', display: 'block', marginBottom: '6px' }}>
+                  Как к вам обращаться
+                </label>
+                <input
+                  type="text"
+                  placeholder="Имя"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onBlur={handleSaveName}
+                  onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                  style={{
+                    width: '100%', boxSizing: 'border-box', padding: '9px 12px',
+                    border: 'none', borderRadius: '8px', background: '#efedff',
+                    fontSize: '13px', fontWeight: '600', color: '#1e2130',
+                    outline: 'none', fontFamily: 'inherit'
+                  }}
+                />
+                {nameSaving && (
+                  <div style={{ fontSize: '11px', color: '#8b8fa3', marginTop: '4px' }}>Сохраняем...</div>
+                )}
+                {nameError && (
+                  <div style={{ color: '#d64545', fontSize: '12px', marginTop: '4px' }}>{nameError}</div>
+                )}
               </div>
-              <label style={{ fontSize: '12px', color: '#8b8fa3', display: 'block', marginBottom: '6px' }}>
-                Как к вам обращаться
-              </label>
-              <input
-                type="text"
-                placeholder="Имя"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                onBlur={handleSaveName}
-                onKeyDown={e => e.key === 'Enter' && e.target.blur()}
-                style={{ ...inputStyle, marginBottom: 0 }}
-              />
-              {nameSaving && (
-                <div style={{ fontSize: '11px', color: '#8b8fa3', marginTop: '4px' }}>Сохраняем...</div>
-              )}
-              {nameError && (
-                <div style={{ color: '#d64545', fontSize: '12px', marginTop: '4px' }}>{nameError}</div>
-              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Логин</div>
+                <div style={{ padding: '9px 12px', fontSize: '13px', fontWeight: '600', color: '#1e2130' }}>
+                  {providers.login}
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #eee', borderTop: '1px solid #eee' }}>
