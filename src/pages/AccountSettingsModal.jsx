@@ -30,6 +30,8 @@ function AccountSettingsModal({ open, onClose }) {
   const [newPassword, setNewPassword] = useState('')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+  const [currentPasswordFocused, setCurrentPasswordFocused] = useState(false)
+  const [newPasswordFocused, setNewPasswordFocused] = useState(false)
   const [showPasswordFields, setShowPasswordFields] = useState(false)
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
   const [passwordError, setPasswordError] = useState('')
@@ -37,6 +39,7 @@ function AccountSettingsModal({ open, onClose }) {
 
   // ─── Имя ("как к вам обращаться") ───
   const [name, setName] = useState('')
+  const [nameFocused, setNameFocused] = useState(false)
   const [nameSaving, setNameSaving] = useState(false)
   const [nameError, setNameError] = useState('')
 
@@ -327,6 +330,45 @@ function AccountSettingsModal({ open, onClose }) {
           width: '380px', maxWidth: '90vw', boxShadow: '0 12px 40px rgba(0,0,0,0.25)'
         }}
       >
+        <style>{`
+          .asm-input-group { position: relative; margin-bottom: 10px; }
+          .asm-glass-input {
+            width: 100%; box-sizing: border-box;
+            border: 1.5px solid #e0e2eb;
+            border-radius: 12px;
+            background: #efedff;
+            padding: 16px 40px 8px 14px;
+            font-size: 13.5px; font-weight: 600;
+            color: #1e2130;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 150ms cubic-bezier(0.4,0,0.2,1);
+          }
+          .asm-glass-input:focus { border-color: #6a5cf5; }
+          .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
+          .asm-floating-label {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: #8b8fa3;
+            pointer-events: none;
+            transition: 150ms cubic-bezier(0.4,0,0.2,1);
+            font-size: 13.5px;
+          }
+          .asm-floating-label.asm-floated {
+            top: 0; left: 10px;
+            transform: translateY(-50%) scale(0.82);
+            padding: 0 6px; border-radius: 6px;
+            color: #6a5cf5;
+            background: white;
+          }
+          .asm-field-icon-btn {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; padding: 4px; cursor: pointer;
+            opacity: 0.6; transition: opacity 0.15s;
+            display: flex; align-items: center; justify-content: center; color: #8b8fa3;
+          }
+          .asm-field-icon-btn:hover { opacity: 1; }
+        `}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', color: '#1e2130' }}>Редактирование профиля</h3>
           <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#8b8fa3' }}>
@@ -383,25 +425,22 @@ function AccountSettingsModal({ open, onClose }) {
             </div>
 
             {/* Как к вам обращаться (редактируется) + Логин (только отображение), в два столбца */}
-            <div style={{ display: 'flex', gap: '18px', padding: '0 0 18px' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <label style={{ fontSize: '12px', color: '#8b8fa3', display: 'block', marginBottom: '6px' }}>
-                  Как к вам обращаться
-                </label>
+            <div style={{ display: 'flex', gap: '12px', padding: '0 0 18px' }}>
+              <div className="asm-input-group" style={{ flex: 1, minWidth: 0 }}>
                 <input
+                  id="asm-name-field"
+                  className="asm-glass-input"
                   type="text"
-                  placeholder="Имя"
+                  autoComplete="off"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  onBlur={handleSaveName}
+                  onFocus={() => setNameFocused(true)}
+                  onBlur={() => { setNameFocused(false); handleSaveName() }}
                   onKeyDown={e => e.key === 'Enter' && e.target.blur()}
-                  style={{
-                    width: '100%', boxSizing: 'border-box', padding: '9px 12px',
-                    border: 'none', borderRadius: '8px', background: '#efedff',
-                    fontSize: '13px', fontWeight: '600', color: '#1e2130',
-                    outline: 'none', fontFamily: 'inherit'
-                  }}
                 />
+                <label className={'asm-floating-label' + (nameFocused || name ? ' asm-floated' : '')} htmlFor="asm-name-field">
+                  Как к вам обращаться
+                </label>
                 {nameSaving && (
                   <div style={{ fontSize: '11px', color: '#8b8fa3', marginTop: '4px' }}>Сохраняем...</div>
                 )}
@@ -409,11 +448,16 @@ function AccountSettingsModal({ open, onClose }) {
                   <div style={{ color: '#d64545', fontSize: '12px', marginTop: '4px' }}>{nameError}</div>
                 )}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Логин</div>
-                <div style={{ padding: '9px 12px', fontSize: '13px', fontWeight: '600', color: '#1e2130' }}>
-                  {providers.login}
-                </div>
+              <div className="asm-input-group" style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  id="asm-login-field"
+                  className="asm-glass-input asm-readonly"
+                  type="text"
+                  value={providers.login || ''}
+                  readOnly
+                  tabIndex={-1}
+                />
+                <label className="asm-floating-label asm-floated" htmlFor="asm-login-field">Логин</label>
               </div>
             </div>
 
@@ -460,19 +504,26 @@ function AccountSettingsModal({ open, onClose }) {
                     {providers.has_password ? 'Смена пароля' : 'Добавление пароля'}
                   </div>
                   {providers.has_password && (
-                    <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <div className="asm-input-group">
                       <input
+                        id="asm-current-password-field"
+                        className="asm-glass-input"
                         type={showCurrentPassword ? 'text' : 'password'}
-                        placeholder="Текущий пароль"
+                        autoComplete="off"
                         value={currentPassword}
                         onChange={e => setCurrentPassword(e.target.value)}
-                        style={{ ...inputStyle, marginBottom: 0, paddingRight: '38px' }}
+                        onFocus={() => setCurrentPasswordFocused(true)}
+                        onBlur={() => setCurrentPasswordFocused(false)}
+                        style={{ paddingRight: '38px' }}
                       />
+                      <label className={'asm-floating-label' + (currentPasswordFocused || currentPassword ? ' asm-floated' : '')} htmlFor="asm-current-password-field">
+                        Текущий пароль
+                      </label>
                       <button
                         type="button"
+                        className="asm-field-icon-btn"
                         onClick={() => setShowCurrentPassword(v => !v)}
                         title={showCurrentPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                        style={eyeBtnStyle}
                       >
                         {showCurrentPassword ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
@@ -488,20 +539,27 @@ function AccountSettingsModal({ open, onClose }) {
                       </button>
                     </div>
                   )}
-                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <div className="asm-input-group">
                     <input
+                      id="asm-new-password-field"
+                      className="asm-glass-input"
                       type={showNewPassword ? 'text' : 'password'}
-                      placeholder="Новый пароль"
+                      autoComplete="off"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
+                      onFocus={() => setNewPasswordFocused(true)}
+                      onBlur={() => setNewPasswordFocused(false)}
                       onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
-                      style={{ ...inputStyle, marginBottom: 0, paddingRight: '38px' }}
+                      style={{ paddingRight: '38px' }}
                     />
+                    <label className={'asm-floating-label' + (newPasswordFocused || newPassword ? ' asm-floated' : '')} htmlFor="asm-new-password-field">
+                      Новый пароль
+                    </label>
                     <button
                       type="button"
+                      className="asm-field-icon-btn"
                       onClick={() => setShowNewPassword(v => !v)}
                       title={showNewPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                      style={eyeBtnStyle}
                     >
                       {showNewPassword ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
@@ -573,18 +631,6 @@ function btnStyle(bg, color) {
     border: 'none', background: bg, color, borderRadius: '8px',
     padding: '7px 14px', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
   }
-}
-
-const inputStyle = {
-  width: '100%', boxSizing: 'border-box', padding: '10px 12px', marginBottom: '8px',
-  border: '1px solid #e0e2eb', borderRadius: '8px', fontSize: '13px',
-  color: '#1e2130', outline: 'none', fontFamily: 'inherit'
-}
-
-const eyeBtnStyle = {
-  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-  border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px',
-  display: 'flex', alignItems: 'center', justifyContent: 'center'
 }
 
 export default AccountSettingsModal
