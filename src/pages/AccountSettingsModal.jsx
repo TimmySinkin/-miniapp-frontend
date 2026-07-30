@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 // Вынесите в общий src/config.js вместе с копией из Login.jsx, чтобы не
 // держать одно и то же значение в нескольких файлах.
 const GOOGLE_CLIENT_ID = '893384076518-hvbeo0vsqrs42lepoj5ip57qgdnfe4jb.apps.googleusercontent.com'
-const TELEGRAM_BOT_USERNAME = 'MiniAppMon_bot'
+const TELEGRAM_BOT_ID = '8503699248'
 
 /**
  * Модалка со списком способов входа и кнопками привязать/отвязать
@@ -17,9 +17,8 @@ function AccountSettingsModal({ open, onClose }) {
   const [providers, setProviders] = useState(null)
   const [error, setError] = useState('')
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [telegramWidgetFailed, setTelegramWidgetFailed] = useState(false)
+  const [telegramLoading, setTelegramLoading] = useState(false)
   const googleTokenClientRef = useRef(null)
-  const telegramContainerRef = useRef(null)
 
   const loadProviders = async () => {
     try {
@@ -99,50 +98,54 @@ function AccountSettingsModal({ open, onClose }) {
     else setError(text)
   }
 
-  // ─── Telegram ───
+  // ─── Telegram: тот же JS-метод Telegram.Login.auth(), что и в Login.jsx —
+  // открывает попап, а кнопка на странице полностью наша, оформленная так же,
+  // как кнопка Google (вместо авторендера официального iframe-виджета, который
+  // молча пропадал без объяснений, если домен не привязан через @BotFather).
   useEffect(() => {
-    if (!open || providers?.has_telegram) return
-    if (!telegramContainerRef.current) return
-    telegramContainerRef.current.innerHTML = ''
-    setTelegramWidgetFailed(false)
-
-    window.onTelegramLinkAuth = async (userData) => {
-      setError('')
-      try {
-        const res = await fetch(`${API_BASE}/api/account/link/telegram`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        })
-        const text = await res.text()
-        if (res.ok) await loadProviders()
-        else setError(text)
-      } catch (e) {
-        setError('Сервер недоступен')
-      }
-    }
-
+    if (!open) return
+    const scriptId = 'telegram-widget-script'
+    if (document.getElementById(scriptId)) return
     const script = document.createElement('script')
+    script.id = scriptId
     script.src = 'https://telegram.org/js/telegram-widget.js?22'
-    script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME)
-    script.setAttribute('data-size', 'medium')
-    script.setAttribute('data-onauth', 'onTelegramLinkAuth(user)')
-    script.setAttribute('data-request-access', 'write')
     script.async = true
-    telegramContainerRef.current.appendChild(script)
+    document.body.appendChild(script)
+  }, [open])
 
-    // Виджет Telegram подменяет себя на iframe только если домен сайта
-    // привязан к боту через @BotFather → /setdomain (и никогда не работает
-    // на localhost). Если это не настроено, виджет молча остаётся пустым —
-    // без этой проверки кнопка просто "пропадает" без всякого объяснения.
-    const timeoutId = setTimeout(() => {
-      const hasIframe = telegramContainerRef.current?.querySelector('iframe')
-      if (!hasIframe) setTelegramWidgetFailed(true)
-    }, 3000)
-
-    return () => clearTimeout(timeoutId)
-  }, [open, providers?.has_telegram])
+  const handleLinkTelegram = () => {
+    if (!window.Telegram || !window.Telegram.Login) {
+      setError('Telegram ещё не готов, попробуйте через секунду')
+      return
+    }
+    setError('')
+    setTelegramLoading(true)
+    window.Telegram.Login.auth(
+      { bot_id: TELEGRAM_BOT_ID, request_access: 'write' },
+      async (userData) => {
+        if (!userData) {
+          // Пользователь закрыл всплывающее окно, ничего не подтвердив.
+          setTelegramLoading(false)
+          return
+        }
+        try {
+          const res = await fetch(`${API_BASE}/api/account/link/telegram`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+          })
+          const text = await res.text()
+          if (res.ok) await loadProviders()
+          else setError(text)
+        } catch (e) {
+          setError('Сервер недоступен')
+        } finally {
+          setTelegramLoading(false)
+        }
+      }
+    )
+  }
 
   const handleUnlinkTelegram = async () => {
     setError('')
@@ -199,18 +202,16 @@ function AccountSettingsModal({ open, onClose }) {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0' }}>
-              <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Telegram</div>
+              <div>
+                <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Telegram</div>
+                {providers.telegram_username && <div style={{ fontSize: '12px', color: '#8b8fa3' }}>@{providers.telegram_username}</div>}
+              </div>
               {providers.has_telegram ? (
                 <button onClick={handleUnlinkTelegram} style={btnStyle('#f4f5f9', '#1e2130')}>Отвязать</button>
               ) : (
-                <div style={{ textAlign: 'right' }}>
-                  <div ref={telegramContainerRef} />
-                  {telegramWidgetFailed && (
-                    <div style={{ fontSize: '11px', color: '#d64545', maxWidth: '170px' }}>
-                      Виджет Telegram не загрузился. Проверьте, что домен сайта привязан к боту через /setdomain у @BotFather (на localhost виджет не работает).
-                    </div>
-                  )}
-                </div>
+                <button onClick={handleLinkTelegram} disabled={telegramLoading} style={btnStyle('#efedff', '#6a5cf5')}>
+                  {telegramLoading ? 'Проверяем...' : 'Привязать'}
+                </button>
               )}
             </div>
           </>
