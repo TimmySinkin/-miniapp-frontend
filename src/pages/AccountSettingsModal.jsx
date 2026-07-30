@@ -286,6 +286,10 @@ function AccountSettingsModal({ open, onClose }) {
       setPasswordError('Новый пароль не соответствует требованиям ниже')
       return
     }
+    if (providers.has_password && newPassword === currentPassword) {
+      setPasswordError('Новый пароль должен отличаться от текущего')
+      return
+    }
     setPasswordError('')
     setPasswordInfo('')
     setPasswordSubmitting(true)
