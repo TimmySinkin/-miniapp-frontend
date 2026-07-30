@@ -365,30 +365,6 @@ function AccountSettingsModal({ open, onClose }) {
             box-shadow: 0 0 0px 1000px #f4f5f9 inset;
           }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
-          /* Скруглённый ВОГНУТЫЙ вырез в углу (не выпуклый "пузырь"): рисуем
-             через radial-gradient — внутренний круг цвета фона модалки
-             "выедает" угол, кольцо чуть шире — это обводка выреза, а дальше
-             всё прозрачно и виден обычный инпут. */
-          .asm-notched-wrap { position: relative; }
-          .asm-notched-wrap::before {
-            content: '';
-            position: absolute;
-            top: -1.5px; left: -1.5px;
-            width: 20px; height: 20px;
-            background: radial-gradient(circle at 0 0,
-              white 0, white 12.5px,
-              #e0e2eb 12.5px, #e0e2eb 14px,
-              transparent 14px);
-            z-index: 2;
-            pointer-events: none;
-            transition: background 150ms cubic-bezier(0.4,0,0.2,1);
-          }
-          .asm-notched-wrap:focus-within::before {
-            background: radial-gradient(circle at 0 0,
-              white 0, white 12.5px,
-              #6a5cf5 12.5px, #6a5cf5 14px,
-              transparent 14px);
-          }
           .asm-floating-label {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
@@ -484,7 +460,7 @@ function AccountSettingsModal({ open, onClose }) {
             <div style={{ display: 'flex', gap: '18px', padding: '0 0 18px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '12px', color: '#8b8fa3', marginBottom: '6px' }}>Как к вам обращаться</div>
-                <div className="asm-input-group asm-notched-wrap">
+                <div className="asm-input-group">
                   <input
                     id="asm-name-field"
                     className="asm-glass-input"
