@@ -365,26 +365,30 @@ function AccountSettingsModal({ open, onClose }) {
             box-shadow: 0 0 0px 1000px #f4f5f9 inset;
           }
           .asm-glass-input.asm-readonly { background: #f4f5f9; font-weight: 600; cursor: default; }
-          /* Скруглённый вырез в углу: обычный border-radius/clip-path даёт либо
-             острый угол, либо просто срезает скругление. Вместо этого кладём
-             сверху маленький квадрат цвета фона модалки со своим скруглённым
-             углом и своей же обводкой — визуально получается гладкий вырез
-             со скруглением, а не просто прямой срез. */
+          /* Скруглённый ВОГНУТЫЙ вырез в углу (не выпуклый "пузырь"): рисуем
+             через radial-gradient — внутренний круг цвета фона модалки
+             "выедает" угол, кольцо чуть шире — это обводка выреза, а дальше
+             всё прозрачно и виден обычный инпут. */
           .asm-notched-wrap { position: relative; }
           .asm-notched-wrap::before {
             content: '';
             position: absolute;
             top: -1.5px; left: -1.5px;
             width: 20px; height: 20px;
-            background: white;
-            border-bottom-right-radius: 14px;
-            border-right: 1.5px solid #e0e2eb;
-            border-bottom: 1.5px solid #e0e2eb;
+            background: radial-gradient(circle at 0 0,
+              white 0, white 12.5px,
+              #e0e2eb 12.5px, #e0e2eb 14px,
+              transparent 14px);
             z-index: 2;
             pointer-events: none;
-            transition: border-color 150ms cubic-bezier(0.4,0,0.2,1);
+            transition: background 150ms cubic-bezier(0.4,0,0.2,1);
           }
-          .asm-notched-wrap:focus-within::before { border-color: #6a5cf5; }
+          .asm-notched-wrap:focus-within::before {
+            background: radial-gradient(circle at 0 0,
+              white 0, white 12.5px,
+              #6a5cf5 12.5px, #6a5cf5 14px,
+              transparent 14px);
+          }
           .asm-floating-label {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
