@@ -28,10 +28,17 @@ function AccountSettingsModal({ open, onClose }) {
   // ─── Смена пароля ───
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [showPasswordFields, setShowPasswordFields] = useState(false)
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
   const [passwordError, setPasswordError] = useState('')
   const [passwordInfo, setPasswordInfo] = useState('')
+
+  // ─── Имя ("как к вам обращаться") ───
+  const [name, setName] = useState('')
+  const [nameSaving, setNameSaving] = useState(false)
+  const [nameError, setNameError] = useState('')
 
   // Те же правила, что в Login.jsx для сброса пароля — держим одинаковыми,
   // иначе бэкенд отклонит пароль, который фронт считает валидным.
@@ -46,7 +53,11 @@ function AccountSettingsModal({ open, onClose }) {
   const loadProviders = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/account/providers`, { credentials: 'include' })
-      if (res.ok) setProviders(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        setProviders(data)
+        setName(data.name || '')
+      }
     } catch (e) {
       setError('Не удалось загрузить статус привязок')
     }
@@ -58,10 +69,13 @@ function AccountSettingsModal({ open, onClose }) {
       // Модалку закрыли — не тащим введённый пароль и ошибки в следующее открытие.
       setCurrentPassword('')
       setNewPassword('')
+      setShowCurrentPassword(false)
+      setShowNewPassword(false)
       setShowPasswordFields(false)
       setPasswordError('')
       setPasswordInfo('')
       setAvatarError('')
+      setNameError('')
     }
   }, [open])
 
@@ -231,6 +245,33 @@ function AccountSettingsModal({ open, onClose }) {
     }
   }
 
+  // ─── Имя: сохраняем по потере фокуса или по Enter, без отдельной кнопки —
+  // так же, как аватар, чтобы не плодить лишний UI ради одного поля.
+  const handleSaveName = async () => {
+    if (nameSaving) return
+    if (providers && name === (providers.name || '')) return // не менялось — не дёргаем сервер
+    setNameError('')
+    setNameSaving(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/account/name`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+      const text = await res.text()
+      if (res.ok) {
+        setProviders(p => ({ ...p, name }))
+      } else {
+        setNameError(text)
+      }
+    } catch (e) {
+      setNameError('Сервер недоступен')
+    } finally {
+      setNameSaving(false)
+    }
+  }
+
   // ─── Смена пароля ───
   const handleChangePassword = async () => {
     if (passwordSubmitting) return
@@ -341,6 +382,31 @@ function AccountSettingsModal({ open, onClose }) {
               />
             </div>
 
+            {/* Логин (только отображение) + имя (редактируется) */}
+            <div style={{ padding: '0 0 18px' }}>
+              <div style={{ fontSize: '13px', color: '#8b8fa3', marginBottom: '12px' }}>
+                Логин: <span style={{ color: '#1e2130', fontWeight: '600' }}>{providers.login}</span>
+              </div>
+              <label style={{ fontSize: '12px', color: '#8b8fa3', display: 'block', marginBottom: '6px' }}>
+                Как к вам обращаться
+              </label>
+              <input
+                type="text"
+                placeholder="Имя"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onBlur={handleSaveName}
+                onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                style={{ ...inputStyle, marginBottom: 0 }}
+              />
+              {nameSaving && (
+                <div style={{ fontSize: '11px', color: '#8b8fa3', marginTop: '4px' }}>Сохраняем...</div>
+              )}
+              {nameError && (
+                <div style={{ color: '#d64545', fontSize: '12px', marginTop: '4px' }}>{nameError}</div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #eee', borderTop: '1px solid #eee' }}>
               <div>
                 <div style={{ fontSize: '14px', color: '#1e2130', fontWeight: '500' }}>Google</div>
@@ -384,22 +450,62 @@ function AccountSettingsModal({ open, onClose }) {
                     {providers.has_password ? 'Смена пароля' : 'Добавление пароля'}
                   </div>
                   {providers.has_password && (
-                    <input
-                      type="password"
-                      placeholder="Текущий пароль"
-                      value={currentPassword}
-                      onChange={e => setCurrentPassword(e.target.value)}
-                      style={inputStyle}
-                    />
+                    <div style={{ position: 'relative', marginBottom: '8px' }}>
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        placeholder="Текущий пароль"
+                        value={currentPassword}
+                        onChange={e => setCurrentPassword(e.target.value)}
+                        style={{ ...inputStyle, marginBottom: 0, paddingRight: '38px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(v => !v)}
+                        title={showCurrentPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                        style={eyeBtnStyle}
+                      >
+                        {showCurrentPassword ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
+                            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.9 18.9 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   )}
-                  <input
-                    type="password"
-                    placeholder="Новый пароль"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
-                    style={inputStyle}
-                  />
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Новый пароль"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+                      style={{ ...inputStyle, marginBottom: 0, paddingRight: '38px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(v => !v)}
+                      title={showNewPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                      style={eyeBtnStyle}
+                    >
+                      {showNewPassword ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8fa3" strokeWidth="2">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.9 18.9 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {newPassword.length > 0 && (
                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0' }}>
                       {PASSWORD_RULES.map(rule => {
@@ -463,6 +569,12 @@ const inputStyle = {
   width: '100%', boxSizing: 'border-box', padding: '10px 12px', marginBottom: '8px',
   border: '1px solid #e0e2eb', borderRadius: '8px', fontSize: '13px',
   color: '#1e2130', outline: 'none', fontFamily: 'inherit'
+}
+
+const eyeBtnStyle = {
+  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+  border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px',
+  display: 'flex', alignItems: 'center', justifyContent: 'center'
 }
 
 export default AccountSettingsModal
