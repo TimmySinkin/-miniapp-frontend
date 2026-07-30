@@ -368,6 +368,16 @@ function AccountSettingsModal({ open, onClose }) {
             display: flex; align-items: center; justify-content: center; color: #8b8fa3;
           }
           .asm-field-icon-btn:hover { opacity: 1; }
+          .asm-btn {
+            border: none; background: transparent; border-radius: 8px;
+            padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background 150ms ease, color 150ms ease;
+          }
+          .asm-btn-save { color: #1e2130; }
+          .asm-btn-save:hover:not(:disabled) { background: #efedff; color: #6a5cf5; }
+          .asm-btn-save:disabled { color: #8b8fa3; cursor: default; }
+          .asm-btn-cancel { color: #8b8fa3; }
+          .asm-btn-cancel:hover { background: #f4f5f9; color: #1e2130; }
         `}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', color: '#1e2130' }}>Редактирование профиля</h3>
@@ -606,12 +616,12 @@ function AccountSettingsModal({ open, onClose }) {
                     <p style={{ color: '#1a9e6a', fontSize: '12px', marginBottom: '8px' }}>{passwordInfo}</p>
                   )}
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={handleChangePassword} disabled={passwordSubmitting} style={btnStyle('#efedff', '#6a5cf5')}>
+                    <button onClick={handleChangePassword} disabled={passwordSubmitting} className="asm-btn asm-btn-save">
                       {passwordSubmitting ? 'Сохраняем...' : 'Сохранить'}
                     </button>
                     <button
                       onClick={() => { setShowPasswordFields(false); setCurrentPassword(''); setNewPassword(''); setPasswordError('') }}
-                      style={btnStyle('#f4f5f9', '#1e2130')}
+                      className="asm-btn asm-btn-cancel"
                     >
                       Отмена
                     </button>
