@@ -256,9 +256,23 @@ function Home() {
     }
 
     return (
-      <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <div className="month-page-root" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
         <style>{`
           @keyframes fadeSlideIn { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+          .month-page-inner { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+          @media (max-width: 640px) { .month-page-inner { padding: 1rem 0.75rem; } }
+
+          .month-header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
+          .month-header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+          .month-title { font-size: 30px; font-family: Georgia,serif; color: #111; }
+          @media (max-width: 480px) { .month-title { font-size: 22px; } }
+
+          .mini-cal { width: 230px; max-width: 100%; background: white; border-radius: 12px; padding: 0.7rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+
+          .task-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+          @media (max-width: 900px) { .task-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+          @media (max-width: 560px) { .task-cards-grid { grid-template-columns: 1fr; gap: 16px; } }
           .cal-day-light { height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; transition:all 0.15s; user-select:none; cursor:pointer; }
           .cal-day-light:hover { background:#EEEDFE !important; }
           .back-btn-light { background:white; border:1px solid #ddd; border-radius:10px; padding:9px 18px; color:#333; cursor:pointer; font-size:14px; font-weight:500; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
@@ -293,19 +307,19 @@ function Home() {
         `}</style>
 
         {/* Единый контейнер шириной 1100px — как на главной странице с месяцами */}
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '1.5rem' }}>
+        <div className="month-page-inner">
 
           {/* ШАПКА: НАЗАД + МЕСЯЦ/ГОД + МИНИ-КАЛЕНДАРЬ */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="month-header-row">
+            <div className="month-header-left">
               <button className="back-btn-light" onClick={() => { setSelectedMonth(null); setSelectedDay(null) }}>⬅︎ Назад</button>
-              <div style={{ fontSize: '30px', fontFamily: 'Georgia,serif', color: '#111' }}>
+              <div className="month-title">
                 <span style={{ fontWeight: '800', textTransform: 'uppercase' }}>{MONTHS[selectedMonth]}</span>{' '}
                 <span style={{ fontWeight: '400', color: '#888' }}>{year}</span>
               </div>
             </div>
 
-            <div style={{ width: '230px', background: 'white', borderRadius: '12px', padding: '0.7rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+            <div className="mini-cal">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
                 {WEEKDAYS.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '9px', fontWeight: '600', color: '#aaa' }}>{d}</div>)}
               </div>
@@ -343,7 +357,7 @@ function Home() {
                 {selectedDay} {MONTHS_GEN[selectedMonth]}
               </h2>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
+              <div className="task-cards-grid">
               {rows.map((row, i) => {
                 const goal = parseFloat(row.count) || 0
                 const done = parseFloat(row.progress) || 0
@@ -441,16 +455,41 @@ function Home() {
 
   /* ─── ГЛАВНАЯ ─── */
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
+    <div className="home-root" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <style>{`
+        .home-root { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+        @media (max-width: 640px) { .home-root { padding: 1rem 0.75rem; } }
+
         .home-nav-btn:hover:not(:disabled) { background: #f4f5f9 !important; }
         .home-nav-btn.active:hover:not(:disabled) { background: #efedff !important; }
         .home-logout-btn:hover { background: #f4f5f9 !important; }
         .home-user-btn:hover { background: #f4f5f9; }
         .home-month-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .home-month-card:hover { transform: scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
+
+        .home-header {
+          display: flex; align-items: center; gap: 24px; background: white; border-radius: 12px;
+          padding: 14px 28px; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+          position: relative; flex-wrap: wrap;
+        }
+        .home-nav { display: flex; gap: 6px; position: absolute; left: 50%; transform: translateX(-50%); }
+        @media (max-width: 768px) {
+          .home-header { flex-direction: column; align-items: stretch; padding: 14px 16px; gap: 10px; }
+          .home-nav { position: static; left: auto; transform: none; justify-content: center; flex-wrap: wrap; order: 2; }
+          .home-user-btn { order: 1; }
+          .home-logout-btn { order: 3; margin-left: 0 !important; align-self: center; }
+        }
+        @media (max-width: 480px) {
+          .home-nav-btn { padding: 8px !important; }
+          .home-nav-label { display: none; }
+        }
+
+        .home-months-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        @media (max-width: 900px) { .home-months-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 640px) { .home-months-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+        @media (max-width: 380px) { .home-months-grid { grid-template-columns: 1fr; } }
       `}</style>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', background: 'white', borderRadius: '12px', padding: '14px 28px', marginBottom: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', position: 'relative' }}>
+      <div className="home-header">
         <div className="home-user-btn" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px', margin: '-4px -8px', transition: 'background 0.15s' }}>
           <div style={{
             width: '32px', height: '32px', borderRadius: '50%',
@@ -463,7 +502,7 @@ function Home() {
           <span style={{ fontSize: '14px', color: '#1e2130' }}>{displayName || login}</span>
         </div>
 
-        <nav style={{ display: 'flex', gap: '6px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+        <nav className="home-nav">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
             const disabled = !item.to && !item.active
@@ -486,7 +525,7 @@ function Home() {
                 }}
               >
                 <Icon size={16} />
-                {item.label}
+                <span className="home-nav-label">{item.label}</span>
               </button>
             )
           })}
@@ -504,7 +543,7 @@ function Home() {
 
       <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div className="home-months-grid">
         {MONTHS.map((name, i) => {
           const img = getImage(i)
           const isCurrent = i === currentMonth
