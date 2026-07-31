@@ -15,7 +15,7 @@ const PASSWORD_RULES = [
 // Иллюстрация телефона из референса (otp-verify-animation.html), адаптированная
 // под управление реальным состоянием формы вместо демо-таймлайна:
 // stage: 'typing' (ждём код) | 'verifying' (идёт проверка) | 'success' (подтверждено)
-function OtpPhoneMockup({ stage, filledCount = 0, colors, time = '9:41' }) {
+function OtpPhoneMockup({ stage, filledCount = 0, colors, time = '9:41', isError = false }) {
   const isSuccess = stage === 'success'
   const cssVars = {
     '--otp-border': colors?.border ?? 'rgba(245,166,35,0.55)',
@@ -23,7 +23,7 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors, time = '9:41' }) {
     '--otp-glow': colors?.glow ?? 'rgba(245,166,35,0.45)',
   }
   return (
-    <div className={'otp-stage-wrap ' + stage} style={cssVars}>
+    <div className={'otp-stage-wrap ' + stage + (isError ? ' error' : '')} style={cssVars}>
       <div className="otp-icon-shield">
         <svg width="46" height="54" viewBox="0 0 24 28" fill="none" stroke="#3ea6ff" strokeWidth="1.8">
           <path d="M12 2 L21 5.5 V13 C21 19 17 23.5 12 26 C7 23.5 3 19 3 13 V5.5 Z" strokeLinejoin="round" />
@@ -39,6 +39,7 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors, time = '9:41' }) {
 
       <div className="otp-phone-wrap">
         <div className="otp-ring otp-ring-warm"></div>
+        <div className="otp-ring otp-ring-error"></div>
         <div className="otp-ring otp-ring-cool"></div>
         <div className="otp-side-btn action"></div>
         <div className="otp-side-btn vol-up"></div>
@@ -325,6 +326,15 @@ function Register() {
         }
         .otp-stage-wrap.typing .otp-ring-warm,
         .otp-stage-wrap.verifying .otp-ring-warm { opacity: 1; }
+        .otp-stage-wrap.error .otp-ring-warm { opacity: 0; }
+        .otp-ring-error {
+          background: conic-gradient(from var(--otp-angle),
+            transparent 0deg, transparent 250deg,
+            #ff3b3b 278deg, #ff0844 298deg, #ff4d6d 316deg,
+            #ff0844 334deg, #b8003a 350deg, transparent 360deg);
+          filter: drop-shadow(0 0 9px rgba(255,59,59,0.55));
+        }
+        .otp-stage-wrap.error .otp-ring-error { opacity: 1; }
         .otp-ring-cool {
           background: conic-gradient(from var(--otp-angle),
             transparent 0deg, transparent 250deg,
@@ -650,6 +660,7 @@ function Register() {
                   stage={codeSubmitting ? 'verifying' : 'typing'}
                   filledCount={[0, 1, 2, 3].filter(i => code[i]).length}
                   time={formatPhoneTime(currentTime)}
+                  isError={!!codeError}
                   colors={{
                     border: codeError ? 'rgba(255,107,107,0.6)' : 'rgba(245,166,35,0.55)',
                     icon: codeError ? '#ff6b6b' : '#f5a623',
