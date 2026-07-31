@@ -25,13 +25,13 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
   return (
     <div className={'otp-stage-wrap ' + stage} style={cssVars}>
       <div className="otp-icon-shield">
-        <svg width="22" height="25" viewBox="0 0 24 28" fill="none" stroke="#3ea6ff" strokeWidth="1.8">
+        <svg width="36" height="42" viewBox="0 0 24 28" fill="none" stroke="#3ea6ff" strokeWidth="1.8">
           <path d="M12 2 L21 5.5 V13 C21 19 17 23.5 12 26 C7 23.5 3 19 3 13 V5.5 Z" strokeLinejoin="round" />
           <path d="M8.2 13.2 L11 16 L16 10.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="otp-icon-mail">
-        <svg width="26" height="20" viewBox="0 0 32 24" fill="none">
+        <svg width="42" height="32" viewBox="0 0 32 24" fill="none">
           <rect x="1" y="1" width="30" height="22" rx="3" fill="#ffffff" stroke="#d93025" strokeWidth="1.5" />
           <path d="M2 3 L16 14 L30 3" stroke="#d93025" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -56,12 +56,12 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
 
           <div className="otp-lock-ring">
             {isSuccess ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V8a4 4 0 0 1 7-2.65" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V8a4 4 0 0 1 8 0v3" />
               </svg>
@@ -286,15 +286,15 @@ function Register() {
         @keyframes otpDrawCheck { to { stroke-dashoffset: 0; } }
 
         /* floating icons around the phone */
-        .otp-stage-wrap { position: relative; width: 210px; margin: 0 auto 18px; }
+        .otp-stage-wrap { position: relative; width: 340px; margin: 0 auto 26px; }
         .otp-icon-shield, .otp-icon-mail { position: absolute; animation: otpBob 3.2s ease-in-out infinite; }
-        .otp-icon-shield { top: 8px; right: -8px; animation-delay: .3s; }
-        .otp-icon-mail { top: 118px; left: -16px; animation-delay: 0s; }
+        .otp-icon-shield { top: 10px; right: -12px; animation-delay: .3s; }
+        .otp-icon-mail { top: 195px; left: -26px; animation-delay: 0s; }
 
         /* rotating gradient ring around the phone frame */
-        .otp-phone-wrap { position: relative; width: 150px; margin: 0 auto; border-radius: 32px; }
+        .otp-phone-wrap { position: relative; width: 245px; margin: 0 auto; border-radius: 40px; }
         .otp-ring {
-          position: absolute; inset: -4px; border-radius: 32px; padding: 4px; z-index: 0;
+          position: absolute; inset: -5px; border-radius: 40px; padding: 5px; z-index: 0;
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor; mask-composite: exclude;
           animation: otpRotateAngle 2.6s linear infinite;
@@ -320,59 +320,61 @@ function Register() {
 
         .otp-phone {
           position: relative; z-index: 1; margin: 4px;
-          padding: 28px 14px 16px; border-radius: 26px;
+          padding: 46px 22px 24px; border-radius: 34px;
           background: #0d0d10; display: flex; flex-direction: column;
-          align-items: center; gap: 12px; min-height: 208px; overflow: hidden;
+          align-items: center; gap: 18px; min-height: 330px; overflow: hidden;
         }
         .otp-dynamic-island {
-          position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
-          width: 52px; height: 15px; background: #000; border-radius: 9px; z-index: 3;
-          display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;
+          position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+          width: 80px; height: 23px; background: #000; border-radius: 13px; z-index: 3;
+          display: flex; align-items: center; justify-content: flex-end; padding-right: 7px;
         }
         .otp-dynamic-island::after {
-          content: ''; width: 5px; height: 5px; border-radius: 50%;
+          content: ''; width: 7px; height: 7px; border-radius: 50%;
           background: radial-gradient(circle at 35% 35%, #4a4a4c, #000 72%);
         }
         .otp-side-btn { position: absolute; background: linear-gradient(180deg, #3c3c40, #19191b); z-index: 2; }
-        .otp-side-btn.action   { left: -2px; top: 64px; width: 2px; height: 14px; border-radius: 2px 0 0 2px; }
-        .otp-side-btn.vol-up   { left: -2px; top: 94px; width: 2px; height: 26px; border-radius: 2px 0 0 2px; }
-        .otp-side-btn.vol-down { left: -2px; top: 124px; width: 2px; height: 26px; border-radius: 2px 0 0 2px; }
-        .otp-side-btn.power    { right: -2px; top: 100px; width: 2px; height: 40px; border-radius: 0 2px 2px 0; }
+        .otp-side-btn.action   { left: -3px; top: 104px; width: 3px; height: 20px; border-radius: 3px 0 0 3px; }
+        .otp-side-btn.vol-up   { left: -3px; top: 152px; width: 3px; height: 40px; border-radius: 3px 0 0 3px; }
+        .otp-side-btn.vol-down { left: -3px; top: 200px; width: 3px; height: 40px; border-radius: 3px 0 0 3px; }
+        .otp-side-btn.power    { right: -3px; top: 160px; width: 3px; height: 60px; border-radius: 0 3px 3px 0; }
         .otp-statusbar {
           width: 100%; display: flex; justify-content: space-between; align-items: center;
-          font-size: 10px; color: rgba(255,255,255,0.85); font-weight: 600; padding: 0 4px;
+          font-size: 15px; color: rgba(255,255,255,0.85); font-weight: 600; padding: 0 8px;
         }
-        .otp-statusbar .right { display: flex; align-items: center; gap: 3px; }
+        .otp-statusbar .right { display: flex; align-items: center; gap: 5px; }
         .otp-battery {
-          width: 15px; height: 8px; border: 1px solid rgba(255,255,255,0.7);
-          border-radius: 2px; position: relative; display: inline-block;
+          width: 22px; height: 12px; border: 1.5px solid rgba(255,255,255,0.7);
+          border-radius: 3px; position: relative; display: inline-block;
         }
         .otp-battery::after {
-          content: ''; position: absolute; right: -3px; top: 2px;
-          width: 2px; height: 3px; background: rgba(255,255,255,0.7); border-radius: 0 1px 1px 0;
+          content: ''; position: absolute; right: -4px; top: 3px;
+          width: 3px; height: 4px; background: rgba(255,255,255,0.7); border-radius: 0 1px 1px 0;
         }
-        .otp-battery::before { content: ''; position: absolute; inset: 1px; right: 3px; background: rgba(255,255,255,0.8); }
+        .otp-battery::before { content: ''; position: absolute; inset: 2px; right: 4px; background: rgba(255,255,255,0.8); }
 
         .otp-lock-ring {
-          width: 42px; height: 42px; border-radius: 50%;
-          border: 2px dashed var(--otp-icon, #f5a623);
+          width: 66px; height: 66px; border-radius: 50%;
+          border: 3px dashed var(--otp-icon, #f5a623);
           display: flex; align-items: center; justify-content: center;
           color: var(--otp-icon, #f5a623);
+          margin-top: 8px;
           transition: color 0.4s ease, border-color 0.4s ease;
         }
-        .otp-dots { display: flex; gap: 10px; height: 20px; align-items: center; }
+        .otp-dots { display: flex; gap: 16px; height: 30px; align-items: center; }
         .otp-dots span {
-          font-size: 17px; color: var(--otp-icon, #f5a623); display: inline-block;
+          font-size: 26px; color: var(--otp-icon, #f5a623); display: inline-block;
           transition: color .3s ease;
         }
         .otp-dots span.pop { animation: otpDotPop .45s cubic-bezier(.34,1.56,.64,1); }
         .otp-pill {
-          width: 100%; padding: 10px 0; border-radius: 10px; text-align: center;
-          font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+          width: 100%; padding: 15px 0; border-radius: 14px; text-align: center;
+          font-size: 18px; font-weight: 700; letter-spacing: .02em;
           background: var(--otp-icon, #f5a623); color: #1a1200;
+          margin-top: auto;
           transition: background .4s ease, color .4s ease;
         }
-        .otp-home-indicator { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.35); margin-top: 2px; }
+        .otp-home-indicator { width: 58px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.35); margin-top: 4px; }
 
         .otp-digit-box {
           width: 56px; height: 62px; border-radius: 12px; text-align: center;
@@ -388,7 +390,7 @@ function Register() {
         }
 
         /* success loader: outline draws -> fills inward -> checkmark reveals (pure CSS, plays on mount) */
-        .otp-loader-wrap { height: 78px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+        .otp-loader-wrap { height: 96px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
         .otp-outline-circle {
           fill: none; stroke: #2ecc71; stroke-width: 6; stroke-linecap: round;
           stroke-dasharray: 100; stroke-dashoffset: 100;
@@ -709,7 +711,7 @@ function Register() {
                   colors={{ border: 'rgba(29,158,117,0.65)', icon: '#1d9e75', glow: 'rgba(29,158,117,0.5)' }}
                 />
                 <div className="otp-loader-wrap">
-                  <svg width="56" height="56" viewBox="0 0 100 100">
+                  <svg width="76" height="76" viewBox="0 0 100 100">
                     <circle className="otp-outline-circle" cx="50" cy="50" r="42" pathLength="100" />
                     <circle className="otp-fill-circle" cx="50" cy="50" r="42" />
                     <circle className="otp-hole-circle" cx="50" cy="50" r="45" />
