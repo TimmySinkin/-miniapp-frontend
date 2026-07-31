@@ -12,6 +12,80 @@ const PASSWORD_RULES = [
   { key: 'latinOnly', label: 'Только латиница (без кириллицы)', test: (p) => p.length === 0 || /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?~`]*$/.test(p) },
 ]
 
+// Иллюстрация телефона из референса (otp-verify-animation.html), адаптированная
+// под управление реальным состоянием формы вместо демо-таймлайна:
+// stage: 'typing' (ждём код) | 'verifying' (идёт проверка) | 'success' (подтверждено)
+function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
+  const isSuccess = stage === 'success'
+  const cssVars = {
+    '--otp-border': colors?.border ?? 'rgba(245,166,35,0.55)',
+    '--otp-icon': colors?.icon ?? '#f5a623',
+    '--otp-glow': colors?.glow ?? 'rgba(245,166,35,0.45)',
+  }
+  return (
+    <div className={'otp-stage-wrap ' + stage} style={cssVars}>
+      <div className="otp-icon-shield">
+        <svg width="22" height="25" viewBox="0 0 24 28" fill="none" stroke="#3ea6ff" strokeWidth="1.8">
+          <path d="M12 2 L21 5.5 V13 C21 19 17 23.5 12 26 C7 23.5 3 19 3 13 V5.5 Z" strokeLinejoin="round" />
+          <path d="M8.2 13.2 L11 16 L16 10.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="otp-icon-mail">
+        <svg width="26" height="20" viewBox="0 0 32 24" fill="none">
+          <rect x="1" y="1" width="30" height="22" rx="3" fill="#ffffff" stroke="#d93025" strokeWidth="1.5" />
+          <path d="M2 3 L16 14 L30 3" stroke="#d93025" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <div className="otp-phone-wrap">
+        <div className="otp-ring otp-ring-warm"></div>
+        <div className="otp-ring otp-ring-cool"></div>
+        <div className="otp-side-btn action"></div>
+        <div className="otp-side-btn vol-up"></div>
+        <div className="otp-side-btn vol-down"></div>
+        <div className="otp-side-btn power"></div>
+        <div className="otp-phone">
+          <div className="otp-dynamic-island"></div>
+          <div className="otp-statusbar">
+            <span>9:41</span>
+            <div className="right">
+              <span>5G</span>
+              <span className="otp-battery"></span>
+            </div>
+          </div>
+
+          <div className="otp-lock-ring">
+            {isSuccess ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 0 1 7-2.65" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+              </svg>
+            )}
+          </div>
+
+          <div className="otp-dots">
+            {[0, 1, 2, 3].map(i => (
+              <span key={i} className={isSuccess || i < filledCount ? 'pop' : ''}>
+                {isSuccess ? '✓' : '✦'}
+              </span>
+            ))}
+          </div>
+
+          <div className="otp-pill">
+            {isSuccess ? 'Подтверждено ✓' : stage === 'verifying' ? 'Проверяем…' : 'Ждём код'}
+          </div>
+          <div className="otp-home-indicator"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Register() {
   const [login, setLogin] = useState('')
   const [loginFocused, setLoginFocused] = useState(false)
@@ -191,41 +265,115 @@ function Register() {
           background: #0a0a0a;
         }
 
-        /* --- Анимация подтверждения кода (по референсу) --- */
-        @keyframes otpPulse {
-          0%, 100% { box-shadow: 0 0 22px var(--otp-glow, rgba(245,166,35,0.35)); }
-          50% { box-shadow: 0 0 38px var(--otp-glow, rgba(245,166,35,0.6)); }
+        /* --- Анимация подтверждения кода (полная версия по референсу) --- */
+        @property --otp-angle {
+          syntax: '<angle>';
+          inherits: false;
+          initial-value: 0deg;
         }
-        @keyframes otpSpin { to { transform: rotate(360deg); } }
+        @keyframes otpRotateAngle { to { --otp-angle: 360deg; } }
+        @keyframes otpBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes otpDotPop {
+          0%   { transform: scale(0.4); opacity: .4; }
+          55%  { transform: scale(1.35); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
         @keyframes otpPopIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes otpFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes otpDrawOutline { to { stroke-dashoffset: 0; } }
+        @keyframes otpFillIn { to { opacity: 1; } }
+        @keyframes otpHoleShrink { to { r: 0px; } }
+        @keyframes otpDrawCheck { to { stroke-dashoffset: 0; } }
+
+        /* floating icons around the phone */
+        .otp-stage-wrap { position: relative; width: 210px; margin: 0 auto 18px; }
+        .otp-icon-shield, .otp-icon-mail { position: absolute; animation: otpBob 3.2s ease-in-out infinite; }
+        .otp-icon-shield { top: 8px; right: -8px; animation-delay: .3s; }
+        .otp-icon-mail { top: 118px; left: -16px; animation-delay: 0s; }
+
+        /* rotating gradient ring around the phone frame */
+        .otp-phone-wrap { position: relative; width: 150px; margin: 0 auto; border-radius: 32px; }
+        .otp-ring {
+          position: absolute; inset: -4px; border-radius: 32px; padding: 4px; z-index: 0;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor; mask-composite: exclude;
+          animation: otpRotateAngle 2.6s linear infinite;
+          opacity: 0; transition: opacity .6s ease;
+        }
+        .otp-ring-warm {
+          background: conic-gradient(from var(--otp-angle),
+            transparent 0deg, transparent 250deg,
+            #f5a623 278deg, #ff8a3d 298deg, #ff6b6b 316deg,
+            #ff4fa3 334deg, #b06bff 350deg, transparent 360deg);
+          filter: drop-shadow(0 0 8px rgba(245,166,35,0.5));
+        }
+        .otp-stage-wrap.typing .otp-ring-warm,
+        .otp-stage-wrap.verifying .otp-ring-warm { opacity: 1; }
+        .otp-ring-cool {
+          background: conic-gradient(from var(--otp-angle),
+            transparent 0deg, transparent 250deg,
+            #1d9e75 278deg, #2ecc71 298deg, #6ef2a3 316deg,
+            #2ecc71 334deg, #1d9e75 350deg, transparent 360deg);
+          filter: drop-shadow(0 0 9px rgba(46,204,113,0.5));
+        }
+        .otp-stage-wrap.success .otp-ring-cool { opacity: 1; }
 
         .otp-phone {
-          width: 180px; margin: 0 auto 28px; padding: 26px 14px 20px;
-          border-radius: 30px; background: #0d0d10;
-          border: 2px solid var(--otp-border, rgba(245,166,35,0.55));
-          animation: otpPulse 2.2s ease-in-out infinite;
-          transition: border-color 0.4s ease;
-          display: flex; flex-direction: column; align-items: center; gap: 14px;
+          position: relative; z-index: 1; margin: 4px;
+          padding: 28px 14px 16px; border-radius: 26px;
+          background: #0d0d10; display: flex; flex-direction: column;
+          align-items: center; gap: 12px; min-height: 208px; overflow: hidden;
         }
-        .otp-phone.verifying { animation: otpPulse 0.9s ease-in-out infinite; }
+        .otp-dynamic-island {
+          position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+          width: 52px; height: 15px; background: #000; border-radius: 9px; z-index: 3;
+          display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;
+        }
+        .otp-dynamic-island::after {
+          content: ''; width: 5px; height: 5px; border-radius: 50%;
+          background: radial-gradient(circle at 35% 35%, #4a4a4c, #000 72%);
+        }
+        .otp-side-btn { position: absolute; background: linear-gradient(180deg, #3c3c40, #19191b); z-index: 2; }
+        .otp-side-btn.action   { left: -2px; top: 64px; width: 2px; height: 14px; border-radius: 2px 0 0 2px; }
+        .otp-side-btn.vol-up   { left: -2px; top: 94px; width: 2px; height: 26px; border-radius: 2px 0 0 2px; }
+        .otp-side-btn.vol-down { left: -2px; top: 124px; width: 2px; height: 26px; border-radius: 2px 0 0 2px; }
+        .otp-side-btn.power    { right: -2px; top: 100px; width: 2px; height: 40px; border-radius: 0 2px 2px 0; }
+        .otp-statusbar {
+          width: 100%; display: flex; justify-content: space-between; align-items: center;
+          font-size: 10px; color: rgba(255,255,255,0.85); font-weight: 600; padding: 0 4px;
+        }
+        .otp-statusbar .right { display: flex; align-items: center; gap: 3px; }
+        .otp-battery {
+          width: 15px; height: 8px; border: 1px solid rgba(255,255,255,0.7);
+          border-radius: 2px; position: relative; display: inline-block;
+        }
+        .otp-battery::after {
+          content: ''; position: absolute; right: -3px; top: 2px;
+          width: 2px; height: 3px; background: rgba(255,255,255,0.7); border-radius: 0 1px 1px 0;
+        }
+        .otp-battery::before { content: ''; position: absolute; inset: 1px; right: 3px; background: rgba(255,255,255,0.8); }
+
         .otp-lock-ring {
-          width: 46px; height: 46px; border-radius: 50%;
+          width: 42px; height: 42px; border-radius: 50%;
           border: 2px dashed var(--otp-icon, #f5a623);
           display: flex; align-items: center; justify-content: center;
           color: var(--otp-icon, #f5a623);
           transition: color 0.4s ease, border-color 0.4s ease;
         }
-        .otp-lock-ring.verifying svg { animation: otpSpin 1.1s linear infinite; transform-origin: center; }
-        .otp-dots { display: flex; gap: 8px; }
-        .otp-dot { font-size: 13px; color: var(--otp-icon, #f5a623); opacity: 0.35; transition: opacity 0.3s ease, color 0.3s ease; }
-        .otp-dot.filled { opacity: 1; }
-        .otp-status-pill {
-          width: 100%; padding: 9px 0; border-radius: 8px; text-align: center;
-          font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em;
-          background: var(--otp-icon, #f5a623); color: #1a1200;
-          transition: background 0.4s ease;
+        .otp-dots { display: flex; gap: 10px; height: 20px; align-items: center; }
+        .otp-dots span {
+          font-size: 17px; color: var(--otp-icon, #f5a623); display: inline-block;
+          transition: color .3s ease;
         }
+        .otp-dots span.pop { animation: otpDotPop .45s cubic-bezier(.34,1.56,.64,1); }
+        .otp-pill {
+          width: 100%; padding: 10px 0; border-radius: 10px; text-align: center;
+          font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+          background: var(--otp-icon, #f5a623); color: #1a1200;
+          transition: background .4s ease, color .4s ease;
+        }
+        .otp-home-indicator { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.35); margin-top: 2px; }
+
         .otp-digit-box {
           width: 56px; height: 62px; border-radius: 12px; text-align: center;
           font-size: 24px; font-weight: 700; color: white;
@@ -237,6 +385,22 @@ function Register() {
         .otp-digit-box:focus {
           border-color: var(--otp-icon, #f5a623);
           box-shadow: 0 0 16px var(--otp-glow, rgba(245,166,35,0.5));
+        }
+
+        /* success loader: outline draws -> fills inward -> checkmark reveals (pure CSS, plays on mount) */
+        .otp-loader-wrap { height: 78px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+        .otp-outline-circle {
+          fill: none; stroke: #2ecc71; stroke-width: 6; stroke-linecap: round;
+          stroke-dasharray: 100; stroke-dashoffset: 100;
+          transform: rotate(-90deg); transform-origin: 50px 50px;
+          animation: otpDrawOutline .6s ease .15s forwards;
+        }
+        .otp-fill-circle { fill: #2ecc71; opacity: 0; animation: otpFillIn .1s ease .8s forwards; }
+        .otp-hole-circle { fill: #0a0a0a; r: 44px; animation: otpHoleShrink .55s cubic-bezier(.45,0,.55,1) .8s forwards; }
+        .otp-check-path {
+          fill: none; stroke: #06210f; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round;
+          stroke-dasharray: 100; stroke-dashoffset: 100;
+          animation: otpDrawCheck .3s ease 1.3s forwards;
         }
         .otp-success-check {
           width: 60px; height: 60px; border-radius: 50%;
@@ -464,37 +628,15 @@ function Register() {
               <>
                 {/* Иллюстрация телефона — состояние синхронизировано с реальным
                     процессом проверки: жёлтый (ждём ввод/проверяем) → зелёный (успех) */}
-                <div
-                  className={'otp-phone' + (codeSubmitting ? ' verifying' : '')}
-                  style={{
-                    '--otp-border': codeError ? 'rgba(255,107,107,0.6)' : 'rgba(245,166,35,0.55)',
-                    '--otp-icon': codeError ? '#ff6b6b' : '#f5a623',
-                    '--otp-glow': codeError ? 'rgba(255,107,107,0.45)' : 'rgba(245,166,35,0.45)',
+                <OtpPhoneMockup
+                  stage={codeSubmitting ? 'verifying' : 'typing'}
+                  filledCount={[0, 1, 2, 3].filter(i => code[i]).length}
+                  colors={{
+                    border: codeError ? 'rgba(255,107,107,0.6)' : 'rgba(245,166,35,0.55)',
+                    icon: codeError ? '#ff6b6b' : '#f5a623',
+                    glow: codeError ? 'rgba(255,107,107,0.45)' : 'rgba(245,166,35,0.45)',
                   }}
-                >
-                  <div className={'otp-lock-ring' + (codeSubmitting ? ' verifying' : '')}>
-                    {codeSubmitting ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="5" y="11" width="14" height="9" rx="2" />
-                        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="otp-dots">
-                    {[0, 1, 2, 3].map(i => (
-                      <span key={i} className={'otp-dot' + (code[i] ? ' filled' : '')}>
-                        {code[i] ? '✓' : '✦'}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="otp-status-pill">
-                    {codeSubmitting ? 'Проверяем…' : 'Ждём код'}
-                  </div>
-                </div>
+                />
 
                 <h1 style={{
                   color: 'white', fontSize: '24px', fontWeight: '700',
@@ -562,31 +704,16 @@ function Register() {
               // Финальный зелёный кадр — держится ~1.3с (см. setTimeout в
               // handleVerify), затем автоматически уходим на /home.
               <div style={{ textAlign: 'center', animation: 'otpFadeUp 0.3s ease' }}>
-                <div
-                  className="otp-phone"
-                  style={{
-                    '--otp-border': 'rgba(29,158,117,0.65)',
-                    '--otp-icon': '#1d9e75',
-                    '--otp-glow': 'rgba(29,158,117,0.5)',
-                  }}
-                >
-                  <div className="otp-lock-ring">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="5" y="11" width="14" height="9" rx="2" />
-                      <path d="M8 11V8a4 4 0 0 1 3-3.87" />
-                      <path d="M16 11V8" />
-                    </svg>
-                  </div>
-                  <div className="otp-dots">
-                    {[0, 1, 2, 3].map(i => (
-                      <span key={i} className="otp-dot filled">✓</span>
-                    ))}
-                  </div>
-                  <div className="otp-status-pill">Подтверждено ✓</div>
-                </div>
-                <div className="otp-success-check">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <path d="M4 12l5 5L20 6" strokeLinecap="round" strokeLinejoin="round" />
+                <OtpPhoneMockup
+                  stage="success"
+                  colors={{ border: 'rgba(29,158,117,0.65)', icon: '#1d9e75', glow: 'rgba(29,158,117,0.5)' }}
+                />
+                <div className="otp-loader-wrap">
+                  <svg width="56" height="56" viewBox="0 0 100 100">
+                    <circle className="otp-outline-circle" cx="50" cy="50" r="42" pathLength="100" />
+                    <circle className="otp-fill-circle" cx="50" cy="50" r="42" />
+                    <circle className="otp-hole-circle" cx="50" cy="50" r="45" />
+                    <path className="otp-check-path" d="M30 51 L45 65 L72 33" pathLength="100" />
                   </svg>
                 </div>
                 <h1 style={{ color: '#7ee787', fontSize: '22px', fontWeight: '700', marginTop: '18px' }}>
