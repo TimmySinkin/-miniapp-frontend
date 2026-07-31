@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -29,8 +29,18 @@ function Register() {
   const [codeError, setCodeError] = useState('')
   const [codeSubmitting, setCodeSubmitting] = useState(false)
   const [resendMsg, setResendMsg] = useState('')
+  // Экран "Готово" перед переходом на /home — как финальный зелёный кадр
+  // в анимации-референсе (иначе успех проскакивает мгновенно и незаметно).
+  const [verified, setVerified] = useState(false)
+  const digitRefs = useRef([])
 
   const allPasswordRulesPass = PASSWORD_RULES.every(r => r.test(password))
+
+  useEffect(() => {
+    if (awaitingCode) {
+      digitRefs.current[0]?.focus()
+    }
+  }, [awaitingCode])
 
   const handleSubmit = async () => {
     if (!login || !email || !password) {
@@ -62,9 +72,10 @@ function Register() {
     }
   }
 
-  const handleVerify = async () => {
+  const handleVerify = async (codeOverride) => {
     if (codeSubmitting) return
-    if (!code || code.trim().length !== 4) {
+    const codeToSend = (codeOverride ?? code).trim()
+    if (!codeToSend || codeToSend.length !== 4) {
       setCodeError('Введите 4-значный код из письма')
       return
     }
@@ -75,10 +86,13 @@ function Register() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ login, code: code.trim(), rememberMe: true })
+        body: JSON.stringify({ login, code: codeToSend, rememberMe: true })
       })
       if (res.ok) {
-        navigate('/home')
+        // Даём кадру "Готово" реально показаться, а не мигнуть между
+        // "Проверяем..." и мгновенным редиректом.
+        setVerified(true)
+        setTimeout(() => navigate('/home'), 1300)
       } else {
         setCodeError(await res.text())
       }
@@ -89,9 +103,40 @@ function Register() {
     }
   }
 
+  // Ввод одной цифры в конкретную ячейку — обновляет общий code, переводит
+  // фокус на следующую ячейку, а после заполнения всех 4 отправляет код
+  // автоматически (как "It'll auto-verify once entered" в референсе).
+  const handleDigitChange = (index, rawValue) => {
+    const digit = rawValue.replace(/\D/g, '').slice(-1)
+    const chars = code.split('')
+    while (chars.length < 4) chars.push('')
+    chars[index] = digit
+    const next = chars.join('').slice(0, 4)
+    setCode(next)
+    setCodeError('')
+
+    if (digit && index < 3) {
+      digitRefs.current[index + 1]?.focus()
+    }
+    if (next.length === 4 && chars.every(c => c !== '')) {
+      handleVerify(next)
+    }
+  }
+
+  const handleDigitKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      digitRefs.current[index - 1]?.focus()
+    }
+    if (e.key === 'Enter') {
+      handleVerify()
+    }
+  }
+
   const handleResend = async () => {
     setResendMsg('')
     setCodeError('')
+    setCode('')
+    digitRefs.current[0]?.focus()
     try {
       const res = await fetch(`${API_BASE}/api/register/resend`, {
         method: 'POST',
@@ -144,6 +189,60 @@ function Register() {
           border-radius: 6px;
           color: rgba(255,255,255,0.85);
           background: #0a0a0a;
+        }
+
+        /* --- Анимация подтверждения кода (по референсу) --- */
+        @keyframes otpPulse {
+          0%, 100% { box-shadow: 0 0 22px var(--otp-glow, rgba(245,166,35,0.35)); }
+          50% { box-shadow: 0 0 38px var(--otp-glow, rgba(245,166,35,0.6)); }
+        }
+        @keyframes otpSpin { to { transform: rotate(360deg); } }
+        @keyframes otpPopIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes otpFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .otp-phone {
+          width: 180px; margin: 0 auto 28px; padding: 26px 14px 20px;
+          border-radius: 30px; background: #0d0d10;
+          border: 2px solid var(--otp-border, rgba(245,166,35,0.55));
+          animation: otpPulse 2.2s ease-in-out infinite;
+          transition: border-color 0.4s ease;
+          display: flex; flex-direction: column; align-items: center; gap: 14px;
+        }
+        .otp-phone.verifying { animation: otpPulse 0.9s ease-in-out infinite; }
+        .otp-lock-ring {
+          width: 46px; height: 46px; border-radius: 50%;
+          border: 2px dashed var(--otp-icon, #f5a623);
+          display: flex; align-items: center; justify-content: center;
+          color: var(--otp-icon, #f5a623);
+          transition: color 0.4s ease, border-color 0.4s ease;
+        }
+        .otp-lock-ring.verifying svg { animation: otpSpin 1.1s linear infinite; transform-origin: center; }
+        .otp-dots { display: flex; gap: 8px; }
+        .otp-dot { font-size: 13px; color: var(--otp-icon, #f5a623); opacity: 0.35; transition: opacity 0.3s ease, color 0.3s ease; }
+        .otp-dot.filled { opacity: 1; }
+        .otp-status-pill {
+          width: 100%; padding: 9px 0; border-radius: 8px; text-align: center;
+          font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em;
+          background: var(--otp-icon, #f5a623); color: #1a1200;
+          transition: background 0.4s ease;
+        }
+        .otp-digit-box {
+          width: 56px; height: 62px; border-radius: 12px; text-align: center;
+          font-size: 24px; font-weight: 700; color: white;
+          background: rgba(255,255,255,0.06);
+          border: 1.5px solid rgba(255,255,255,0.18);
+          outline: none; font-family: inherit;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .otp-digit-box:focus {
+          border-color: var(--otp-icon, #f5a623);
+          box-shadow: 0 0 16px var(--otp-glow, rgba(245,166,35,0.5));
+        }
+        .otp-success-check {
+          width: 60px; height: 60px; border-radius: 50%;
+          background: #1d9e75; color: white;
+          display: flex; align-items: center; justify-content: center;
+          margin: 6px auto 0; animation: otpPopIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
         }
       `}</style>
 
@@ -360,69 +459,144 @@ function Register() {
             </div>
           </>
         ) : (
-          <div style={{ maxWidth: '420px' }}>
-            <h1 style={{
-              color: 'white', fontSize: '24px', fontWeight: '700',
-              lineHeight: '1.2', marginBottom: '0.75rem'
-            }}>
-              Подтвердите почту
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '1.5rem' }}>
-              Мы отправили 4-значный код на {email}. Введите его ниже — код действителен 10 минут.
-            </p>
+          <div style={{ maxWidth: '420px', width: '100%' }}>
+            {!verified ? (
+              <>
+                {/* Иллюстрация телефона — состояние синхронизировано с реальным
+                    процессом проверки: жёлтый (ждём ввод/проверяем) → зелёный (успех) */}
+                <div
+                  className={'otp-phone' + (codeSubmitting ? ' verifying' : '')}
+                  style={{
+                    '--otp-border': codeError ? 'rgba(255,107,107,0.6)' : 'rgba(245,166,35,0.55)',
+                    '--otp-icon': codeError ? '#ff6b6b' : '#f5a623',
+                    '--otp-glow': codeError ? 'rgba(255,107,107,0.45)' : 'rgba(245,166,35,0.45)',
+                  }}
+                >
+                  <div className={'otp-lock-ring' + (codeSubmitting ? ' verifying' : '')}>
+                    {codeSubmitting ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="5" y="11" width="14" height="9" rx="2" />
+                        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="otp-dots">
+                    {[0, 1, 2, 3].map(i => (
+                      <span key={i} className={'otp-dot' + (code[i] ? ' filled' : '')}>
+                        {code[i] ? '✓' : '✦'}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="otp-status-pill">
+                    {codeSubmitting ? 'Проверяем…' : 'Ждём код'}
+                  </div>
+                </div>
 
-            <input
-              className="reg-input"
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              placeholder="0000"
-              value={code}
-              onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              onKeyDown={e => e.key === 'Enter' && handleVerify()}
-              autoComplete="one-time-code"
-              style={{
-                width: '100%', padding: '16px', marginBottom: '12px',
-                borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.07)',
-                fontSize: '22px', letterSpacing: '10px', textAlign: 'center',
-                boxSizing: 'border-box'
-              }}
-            />
+                <h1 style={{
+                  color: 'white', fontSize: '24px', fontWeight: '700',
+                  lineHeight: '1.2', marginBottom: '0.75rem', textAlign: 'center'
+                }}>
+                  {codeSubmitting ? 'Проверяем код…' : 'Подтвердите почту'}
+                </h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '1.5rem', textAlign: 'center' }}>
+                  Мы отправили 4-значный код на {email}. Код подставится автоматически, как только вы введёте все 4 цифры.
+                </p>
 
-            {codeError && (
-              <p style={{ color: '#ffaaaa', fontSize: '13px', marginBottom: '8px' }}>{codeError}</p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
+                  {[0, 1, 2, 3].map(i => (
+                    <input
+                      key={i}
+                      ref={el => (digitRefs.current[i] = el)}
+                      className="otp-digit-box"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={code[i] || ''}
+                      disabled={codeSubmitting}
+                      onChange={e => handleDigitChange(i, e.target.value)}
+                      onKeyDown={e => handleDigitKeyDown(i, e)}
+                      autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                    />
+                  ))}
+                </div>
+
+                {codeError && (
+                  <p style={{ color: '#ffaaaa', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>{codeError}</p>
+                )}
+                {resendMsg && !codeError && (
+                  <p style={{ color: '#7ee787', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>{resendMsg}</p>
+                )}
+
+                <button
+                  onClick={() => handleVerify()}
+                  disabled={codeSubmitting}
+                  style={{
+                    width: '100%', padding: '16px',
+                    borderRadius: '10px', border: 'none',
+                    background: 'rgba(255,255,255,0.15)', color: 'white',
+                    fontSize: '16px', fontWeight: '500', cursor: codeSubmitting ? 'default' : 'pointer',
+                    opacity: codeSubmitting ? 0.6 : 1,
+                    marginTop: '4px', marginBottom: '12px'
+                  }}
+                >
+                  {codeSubmitting ? 'Проверяем…' : 'Подтвердить'}
+                </button>
+
+                <button
+                  onClick={handleResend}
+                  type="button"
+                  style={{
+                    width: '100%', padding: '10px', background: 'transparent',
+                    border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '13px',
+                    cursor: 'pointer', textDecoration: 'underline'
+                  }}
+                >
+                  Отправить код ещё раз
+                </button>
+              </>
+            ) : (
+              // Финальный зелёный кадр — держится ~1.3с (см. setTimeout в
+              // handleVerify), затем автоматически уходим на /home.
+              <div style={{ textAlign: 'center', animation: 'otpFadeUp 0.3s ease' }}>
+                <div
+                  className="otp-phone"
+                  style={{
+                    '--otp-border': 'rgba(29,158,117,0.65)',
+                    '--otp-icon': '#1d9e75',
+                    '--otp-glow': 'rgba(29,158,117,0.5)',
+                  }}
+                >
+                  <div className="otp-lock-ring">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="5" y="11" width="14" height="9" rx="2" />
+                      <path d="M8 11V8a4 4 0 0 1 3-3.87" />
+                      <path d="M16 11V8" />
+                    </svg>
+                  </div>
+                  <div className="otp-dots">
+                    {[0, 1, 2, 3].map(i => (
+                      <span key={i} className="otp-dot filled">✓</span>
+                    ))}
+                  </div>
+                  <div className="otp-status-pill">Подтверждено ✓</div>
+                </div>
+                <div className="otp-success-check">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                    <path d="M4 12l5 5L20 6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h1 style={{ color: '#7ee787', fontSize: '22px', fontWeight: '700', marginTop: '18px' }}>
+                  Почта подтверждена!
+                </h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginTop: '6px' }}>
+                  Переносим вас в приложение…
+                </p>
+              </div>
             )}
-            {resendMsg && !codeError && (
-              <p style={{ color: '#7ee787', fontSize: '13px', marginBottom: '8px' }}>{resendMsg}</p>
-            )}
-
-            <button
-              onClick={handleVerify}
-              disabled={codeSubmitting}
-              style={{
-                width: '100%', padding: '16px',
-                borderRadius: '10px', border: 'none',
-                background: 'rgba(255,255,255,0.15)', color: 'white',
-                fontSize: '16px', fontWeight: '500', cursor: codeSubmitting ? 'default' : 'pointer',
-                opacity: codeSubmitting ? 0.6 : 1,
-                marginTop: '4px', marginBottom: '12px'
-              }}
-            >
-              {codeSubmitting ? 'Проверяем…' : 'Подтвердить'}
-            </button>
-
-            <button
-              onClick={handleResend}
-              type="button"
-              style={{
-                width: '100%', padding: '10px', background: 'transparent',
-                border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '13px',
-                cursor: 'pointer', textDecoration: 'underline'
-              }}
-            >
-              Отправить код ещё раз
-            </button>
           </div>
         )}
       </div>
