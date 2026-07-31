@@ -754,16 +754,15 @@ function TopBar() {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
-  const [displayName, setDisplayName] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Аватарка и имя тянутся отдельно от /api/me, из того же эндпоинта, что
+  // Аватарка тянется отдельно от /api/me, из того же эндпоинта, что
   // и модалка настроек — обновляем при закрытии модалки, чтобы новое
-  // фото/имя сразу подхватывались в шапке.
-  const loadProfile = () => {
+  // фото сразу подхватывалось в шапке.
+  const loadAvatar = () => {
     fetch(`${API_BASE}/api/account/providers`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (data) { setAvatarUrl(data.avatar_url); setDisplayName(data.name || null); } })
+      .then((data) => { if (data) setAvatarUrl(data.avatar_url); })
       .catch(() => {});
   };
 
@@ -771,7 +770,7 @@ function TopBar() {
     let cancelled = false;
     fetch(`${API_BASE}/api/me`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (!cancelled && data) { setLogin(data.login); loadProfile(); } })
+      .then((data) => { if (!cancelled && data) { setLogin(data.login); loadAvatar(); } })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -785,9 +784,9 @@ function TopBar() {
     <header className="topbar">
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
-          {!avatarUrl && (displayName || login ? (displayName || login)[0].toUpperCase() : "T")}
+          {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
         </div>
-        <span className="user-name">{displayName || login || "tim"}</span>
+        <span className="user-name">{login || "tim"}</span>
       </div>
       <nav className="topbar-nav">
         {NAV_ITEMS.map((item) => {
@@ -812,7 +811,7 @@ function TopBar() {
         <LogOut size={15} />
         Выйти
       </button>
-      <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile(); }} />
+      <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar(); }} />
     </header>
   );
 }
@@ -1194,7 +1193,11 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
       });
 
       if (!response.ok) {
-        throw new Error(`Сервер ответил статусом ${response.status}`);
+        // Раньше тут терялось тело ответа (там как раз лежит настоящий текст
+        // ошибки от бэкенда, например "Ошибка: <сообщение исключения>") —
+        // пользователь видел только код статуса и гадал, что случилось.
+        const bodyText = await response.text().catch(() => "");
+        throw new Error(bodyText || `Сервер ответил статусом ${response.status}`);
       }
 
       const reply = await response.text();
@@ -1328,7 +1331,13 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
           // чата содержит срок в днях. Отдельной кнопки "Добавить в активные
           // планы" больше нет — план активируется автоматически при успешной
           // записи в календарь (см. handleSaveToCalendar → onAddPlan).
-          const showCalendarButton = isLast && !!parseDurationDays(activeChat?.goalText);
+          // Кнопка пропадает НАВСЕГДА, как только план один раз сохранён
+          // (activeChat.plan становится не-null сразу при успешном сохранении —
+          // см. handleSaveToCalendar). Без этой проверки кнопка появлялась бы
+          // и на автосообщении-подтверждении "✅ Записано...", как только оно
+          // становится последним сообщением чата, позволяя сохранять план
+          // повторно до бесконечности и плодя дубликаты подтверждений.
+          const showCalendarButton = isLast && !activeChat?.plan && !!parseDurationDays(activeChat?.goalText);
           return (
             <BotMessage
               key={i}
