@@ -528,7 +528,7 @@ function Register() {
                   className={'reg-floating-label' + (emailFocused || email ? ' floated' : '')}
                   htmlFor="reg-email-field"
                 >
-                  Email
+                  Почта
                 </label>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: '-6px 0 12px 4px' }}>
