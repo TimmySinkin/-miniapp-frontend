@@ -112,6 +112,9 @@ function Register() {
   const [codeError, setCodeError] = useState('')
   const [codeSubmitting, setCodeSubmitting] = useState(false)
   const [resendMsg, setResendMsg] = useState('')
+  // Таймер на кнопке "Отправить код ещё раз" — повторный запрос кода
+  // доступен не чаще раза в минуту.
+  const [resendCooldown, setResendCooldown] = useState(0)
   // Экран "Готово" перед переходом на /home — как финальный зелёный кадр
   // в анимации-референсе (иначе успех проскакивает мгновенно и незаметно).
   const [verified, setVerified] = useState(false)
@@ -124,6 +127,23 @@ function Register() {
     const timer = setInterval(() => setCurrentTime(new Date()), 30000)
     return () => clearInterval(timer)
   }, [])
+
+  // Таймер повторной отправки: старт сразу после того, как код был впервые
+  // отправлен (при переходе на экран подтверждения), и каждый раз заново
+  // после успешного "Отправить код ещё раз".
+  useEffect(() => {
+    if (awaitingCode) {
+      setResendCooldown(60)
+    }
+  }, [awaitingCode])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown(s => (s > 0 ? s - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown > 0])
 
   const allPasswordRulesPass = PASSWORD_RULES.every(r => r.test(password))
 
@@ -224,6 +244,7 @@ function Register() {
   }
 
   const handleResend = async () => {
+    if (resendCooldown > 0) return
     setResendMsg('')
     setCodeError('')
     setCode('')
@@ -237,6 +258,7 @@ function Register() {
       const text = await res.text()
       if (res.ok) {
         setResendMsg('Код отправлен повторно')
+        setResendCooldown(60)
       } else {
         setCodeError(text)
       }
@@ -508,7 +530,7 @@ function Register() {
                   className={'reg-floating-label' + (loginFocused || login ? ' floated' : '')}
                   htmlFor="reg-login-field"
                 >
-                  Логин
+                  Имя
                 </label>
               </div>
 
@@ -528,11 +550,11 @@ function Register() {
                   className={'reg-floating-label' + (emailFocused || email ? ' floated' : '')}
                   htmlFor="reg-email-field"
                 >
-                  Почта
+                  Email
                 </label>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: '-6px 0 12px 4px' }}>
-                На неё придёт код подтверждения
+                На него придёт код подтверждения
               </p>
 
               <div className="reg-input-group" style={{ marginBottom: '8px' }}>
@@ -721,13 +743,18 @@ function Register() {
                 <button
                   onClick={handleResend}
                   type="button"
+                  disabled={resendCooldown > 0}
                   style={{
                     width: '100%', padding: '10px', background: 'transparent',
                     border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '13px',
-                    cursor: 'pointer', textDecoration: 'underline'
+                    cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                    textDecoration: resendCooldown > 0 ? 'none' : 'underline',
+                    opacity: resendCooldown > 0 ? 0.5 : 1
                   }}
                 >
-                  Отправить код ещё раз
+                  {resendCooldown > 0
+                    ? `Отправить код ещё раз (через ${resendCooldown}с)`
+                    : 'Отправить код ещё раз'}
                 </button>
               </>
             ) : (
