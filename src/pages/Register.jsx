@@ -508,7 +508,7 @@ function Register() {
                   className={'reg-floating-label' + (loginFocused || login ? ' floated' : '')}
                   htmlFor="reg-login-field"
                 >
-                  Имя
+                  Логин
                 </label>
               </div>
 
