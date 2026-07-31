@@ -532,7 +532,7 @@ function Register() {
                 </label>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: '-6px 0 12px 4px' }}>
-                На него придёт код подтверждения
+                На неё придёт код подтверждения
               </p>
 
               <div className="reg-input-group" style={{ marginBottom: '8px' }}>
