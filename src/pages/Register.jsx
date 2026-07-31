@@ -15,7 +15,7 @@ const PASSWORD_RULES = [
 // Иллюстрация телефона из референса (otp-verify-animation.html), адаптированная
 // под управление реальным состоянием формы вместо демо-таймлайна:
 // stage: 'typing' (ждём код) | 'verifying' (идёт проверка) | 'success' (подтверждено)
-function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
+function OtpPhoneMockup({ stage, filledCount = 0, colors, time = '9:41' }) {
   const isSuccess = stage === 'success'
   const cssVars = {
     '--otp-border': colors?.border ?? 'rgba(245,166,35,0.55)',
@@ -47,7 +47,7 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
         <div className="otp-phone">
           <div className="otp-dynamic-island"></div>
           <div className="otp-statusbar">
-            <span>9:41</span>
+            <span>{time}</span>
             <div className="right">
               <span>5G</span>
               <span className="otp-battery"></span>
@@ -86,6 +86,14 @@ function OtpPhoneMockup({ stage, filledCount = 0, colors }) {
   )
 }
 
+// Локальное время устройства пользователя для статус-бара телефона в
+// иллюстрации (формат как в статус-баре iOS: часы без ведущего нуля,
+// минуты — с ним, напр. "9:05" или "15:24").
+function formatPhoneTime(date) {
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${date.getHours()}:${minutes}`
+}
+
 function Register() {
   const [login, setLogin] = useState('')
   const [loginFocused, setLoginFocused] = useState(false)
@@ -107,6 +115,14 @@ function Register() {
   // в анимации-референсе (иначе успех проскакивает мгновенно и незаметно).
   const [verified, setVerified] = useState(false)
   const digitRefs = useRef([])
+  // Время устройства для статус-бара телефона в иллюстрации OTP — реальное,
+  // а не захардкоженное "9:41", обновляется раз в минуту.
+  const [currentTime, setCurrentTime] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000)
+    return () => clearInterval(timer)
+  }, [])
 
   const allPasswordRulesPass = PASSWORD_RULES.every(r => r.test(password))
 
@@ -633,6 +649,7 @@ function Register() {
                 <OtpPhoneMockup
                   stage={codeSubmitting ? 'verifying' : 'typing'}
                   filledCount={[0, 1, 2, 3].filter(i => code[i]).length}
+                  time={formatPhoneTime(currentTime)}
                   colors={{
                     border: codeError ? 'rgba(255,107,107,0.6)' : 'rgba(245,166,35,0.55)',
                     icon: codeError ? '#ff6b6b' : '#f5a623',
@@ -708,6 +725,7 @@ function Register() {
               <div style={{ textAlign: 'center', animation: 'otpFadeUp 0.3s ease' }}>
                 <OtpPhoneMockup
                   stage="success"
+                  time={formatPhoneTime(currentTime)}
                   colors={{ border: 'rgba(29,158,117,0.65)', icon: '#1d9e75', glow: 'rgba(29,158,117,0.5)' }}
                 />
                 <div className="otp-loader-wrap">
