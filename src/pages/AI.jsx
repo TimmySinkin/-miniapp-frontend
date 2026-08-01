@@ -1857,16 +1857,19 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
 }
 
 #root, #app {
   height: 100%;
+  height: 100dvh;
 }
 
 .app-shell {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   background: var(--bg);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -2361,7 +2364,7 @@ html, body {
   /* А вот развёрнутая панель (когда пользователь тапнул на "раскрыть")
      становится выезжающей поверх контента — иначе ей просто некуда деться. */
   .sidebar:not(.sidebar-collapsed) {
-    position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
+    position: fixed; top: 0; left: 0; height: 100vh; height: 100dvh; z-index: 50;
     width: 280px; max-width: 84vw;
     box-shadow: 0 0 32px rgba(0,0,0,0.25);
   }
