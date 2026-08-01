@@ -470,16 +470,26 @@ function Home() {
         .home-header {
           display: flex; align-items: center; gap: 16px; background: white; border-radius: 12px;
           padding: 14px 28px; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-          flex-wrap: nowrap;
+          flex-wrap: nowrap; position: relative;
         }
         .home-user-btn { flex-shrink: 0; }
         .home-nav {
-          display: flex; align-items: center; gap: 6px; flex: 1 1 auto;
-          justify-content: center; min-width: 0; overflow-x: auto; scrollbar-width: none;
+          display: flex; align-items: center; gap: 6px;
+          position: absolute; left: 50%; transform: translateX(-50%);
         }
         .home-nav::-webkit-scrollbar { display: none; }
         .home-nav-btn { flex-shrink: 0; white-space: nowrap; }
-        .home-logout-btn { flex-shrink: 0; }
+        .home-logout-btn { flex-shrink: 0; margin-left: auto; }
+
+        /* Планшет и телефон: как в AI-агенте — nav возвращается в обычный поток,
+           центрируется в оставшемся месте и скроллится по горизонтали, если не влезает */
+        @media (max-width: 900px) {
+          .home-nav {
+            position: static; transform: none; left: auto;
+            flex: 1 1 auto; justify-content: center; min-width: 0;
+            overflow-x: auto; scrollbar-width: none;
+          }
+        }
 
         /* Планшет: чуть уже — только сжимаем отступы, строка не ломается */
         @media (max-width: 768px) {
@@ -498,8 +508,8 @@ function Home() {
           .home-nav-btn { padding: 6px 8px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
           .home-nav-btn svg { width: 14px !important; height: 14px !important; flex-shrink: 0; }
           .home-nav-btn:not(.active) .home-nav-label { display: none; }
-          .home-logout-btn { padding: 5px 9px !important; font-size: 10px !important; gap: 4px !important; }
-          .home-logout-btn svg { width: 12px !important; height: 12px !important; }
+          .home-logout-btn { padding: 7px 10px !important; font-size: 12px !important; gap: 6px !important; }
+          .home-logout-btn .home-logout-label { display: none; }
         }
         @media (max-width: 360px) {
           .home-nav-btn { padding: 5px 6px !important; }
@@ -563,7 +573,7 @@ function Home() {
         }}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e7e8ee', background: 'white', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', color: '#1e2130', cursor: 'pointer', transition: 'background 0.15s' }}>
           <LogOut size={15} />
-          Выйти
+          <span className="home-logout-label">Выйти</span>
         </button>
       </div>
 
