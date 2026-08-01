@@ -5,7 +5,8 @@ import Register from './pages/Register'
 import Home from './pages/Home'
 import AI from './pages/AI'
 import Stats from './pages/Stats'
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // Раньше "/" безусловно редиректил на "/login" — поэтому даже с активной
 // сессией (кука есть) вы всегда попадали на форму входа при заходе на
