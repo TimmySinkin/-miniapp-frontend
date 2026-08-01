@@ -494,7 +494,7 @@ function Home() {
         /* Планшет: чуть уже — только сжимаем отступы, строка не ломается */
         @media (max-width: 768px) {
           .home-header { padding: 12px 16px; gap: 10px; }
-          .home-nav { gap: 3px; justify-content: flex-start; }
+          .home-nav { gap: 3px; }
           .home-nav-btn { padding: 7px 10px !important; font-size: 12.5px !important; gap: 5px !important; }
         }
 
@@ -504,7 +504,7 @@ function Home() {
           .home-user-btn { padding: 3px 4px; margin: -3px -4px; gap: 5px !important; max-width: 92px; overflow: hidden; }
           .home-user-btn > div:first-child { width: 24px !important; height: 24px !important; font-size: 11px !important; flex-shrink: 0; }
           .home-user-btn span { font-size: 11px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-          .home-nav { gap: 3px; justify-content: flex-start; padding: 0 2px; }
+          .home-nav { gap: 3px; padding: 0 2px; }
           .home-nav-btn { padding: 6px 8px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
           .home-nav-btn svg { width: 14px !important; height: 14px !important; flex-shrink: 0; }
           .home-nav-btn:not(.active) .home-nav-label { display: none; }
