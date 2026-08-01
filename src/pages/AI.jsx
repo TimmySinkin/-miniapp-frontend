@@ -1902,7 +1902,7 @@ const CSS = `
 .sidebar-search-row .sidebar-search { flex: 1; min-width: 0; }
 
 .sidebar-toggle-btn {
-  border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
+  border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
 }
@@ -1925,6 +1925,7 @@ const CSS = `
 .sidebar-search kbd {
   font-size: 11px; color: var(--text-muted); background: var(--panel);
   border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px;
+  flex-shrink: 0;
 }
 .search-clear-btn {
   border: none; background: transparent; color: var(--text-muted);
