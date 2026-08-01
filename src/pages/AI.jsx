@@ -1853,6 +1853,17 @@ const CSS = `
 
 * { box-sizing: border-box; }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root, #app {
+  height: 100%;
+}
+
 .app-shell {
   display: flex;
   height: 100vh;
