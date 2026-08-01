@@ -22,6 +22,8 @@ import {
   Palette,
   Globe2,
   GraduationCap,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import AccountSettingsModal from "./AccountSettingsModal";
 
@@ -479,6 +481,7 @@ function Sidebar({
   onRemovePlan,
   usageStats,
   goalsCount,
+  onClose,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState("");
@@ -588,6 +591,18 @@ function Sidebar({
 
   return (
     <aside className="sidebar">
+      <div className="sidebar-top">
+        <span className="sidebar-top-title">Чаты</span>
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          title="Закрыть боковую панель"
+          aria-label="Закрыть боковую панель"
+          onClick={onClose}
+        >
+          <ChevronsLeft size={16} />
+        </button>
+      </div>
       <div className="sidebar-search">
         <Search size={16} className="sidebar-search-icon" />
         <input
@@ -750,7 +765,7 @@ function Sidebar({
 // Top bar
 // ---------------------------------------------------------------------------
 
-function TopBar() {
+function TopBar({ sidebarOpen, onOpenSidebar }) {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -782,6 +797,17 @@ function TopBar() {
 
   return (
     <header className="topbar">
+      {!sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-open-btn"
+          title="Открыть боковую панель"
+          aria-label="Открыть боковую панель"
+          onClick={onOpenSidebar}
+        >
+          <ChevronsRight size={17} />
+        </button>
+      )}
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
           {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
@@ -1524,6 +1550,7 @@ export default function AIAgentDashboard() {
   const [login, setLogin] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [usageStats, setUsageStats] = useState(() => loadUsageStats(null));
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Логин получаем через httpOnly cookie (/api/me), а не из localStorage —
   // так срок жизни сессии реально зависит от "запомнить меня" на логине.
@@ -1742,20 +1769,26 @@ export default function AIAgentDashboard() {
   return (
     <div className="app-shell">
       <style>{CSS}</style>
-      <Sidebar
-        chats={chats}
-        activeChatId={activeChatId}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
-        onToggleFavorite={handleToggleFavorite}
-        onRenameChat={handleRenameChat}
-        onDeleteChat={handleDeleteChat}
-        onRemovePlan={handleRemovePlan}
-        usageStats={usageStats}
-        goalsCount={goalsCount}
-      />
+      {sidebarOpen && (
+        <Sidebar
+          chats={chats}
+          activeChatId={activeChatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onToggleFavorite={handleToggleFavorite}
+          onRenameChat={handleRenameChat}
+          onDeleteChat={handleDeleteChat}
+          onRemovePlan={handleRemovePlan}
+          usageStats={usageStats}
+          goalsCount={goalsCount}
+          onClose={() => setSidebarOpen(false)}
+        />
+      )}
       <div className="main-panel">
-        <TopBar />
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onOpenSidebar={() => setSidebarOpen(true)}
+        />
         <ChatArea
           activeChat={activeChat}
           onCreateChat={handleCreateChat}
@@ -1808,6 +1841,17 @@ const CSS = `
   padding: 16px 14px;
   gap: 12px;
 }
+
+.sidebar-top {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-top-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.sidebar-close-btn {
+  border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+}
+.sidebar-close-btn:hover { background: var(--bg); color: var(--text); }
 
 .sidebar-search {
   display: flex;
@@ -1966,6 +2010,12 @@ const CSS = `
   flex-shrink: 0; position: relative;
 }
 .topbar-user { display: flex; align-items: center; gap: 8px; }
+.sidebar-open-btn {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+}
+.sidebar-open-btn:hover { background: var(--bg); color: var(--text); }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft);
   color: var(--accent); display: flex; align-items: center; justify-content: center;
