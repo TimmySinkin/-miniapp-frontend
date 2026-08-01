@@ -369,7 +369,7 @@ function Stats() {
                   title={disabled ? 'Скоро' : undefined}
                 >
                   <Icon size={16} />
-                  {item.label}
+                  <span>{item.label}</span>
                 </button>
               )
             })}
@@ -636,6 +636,7 @@ const CSS = `
   .stats-sidebar {
     width: 100%; border-right: none; border-bottom: 1px solid #eee;
     padding: 1rem; overflow-y: visible;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
   }
   .stats-main { overflow: visible; }
 
@@ -647,12 +648,14 @@ const CSS = `
   }
   .topbar-nav::-webkit-scrollbar { display: none; }
   .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  /* На мобильных подпись остаётся только у активного пункта — остальные иконками */
+  .nav-btn:not(.active) span { display: none; }
   .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .logout-btn span { display: none; }
 
   .stats-content { padding: 1rem; }
-  .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
   .charts-grid { grid-template-columns: 1fr; }
   .insights-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
@@ -662,7 +665,7 @@ const CSS = `
   .avatar { width: 28px; height: 28px; }
   .nav-btn { padding: 6px 8px; }
   .stats-page-title { font-size: 19px; }
-  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .stats-sidebar { grid-template-columns: 1fr; gap: 14px; }
   .insights-grid { grid-template-columns: 1fr; }
 }
 `
