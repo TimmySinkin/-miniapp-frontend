@@ -22,8 +22,7 @@ import {
   Palette,
   Globe2,
   GraduationCap,
-  ChevronsLeft,
-  ChevronsRight,
+  PanelLeft,
 } from "lucide-react";
 import AccountSettingsModal from "./AccountSettingsModal";
 
@@ -482,6 +481,7 @@ function Sidebar({
   usageStats,
   goalsCount,
   collapsed,
+  onToggle,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState("");
@@ -592,25 +592,36 @@ function Sidebar({
   return (
     <aside className={"sidebar" + (collapsed ? " sidebar-collapsed" : "")}>
       <div className="sidebar-inner">
-      <div className="sidebar-search">
-        <Search size={16} className="sidebar-search-icon" />
-        <input
-          placeholder="Поиск чатов..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery ? (
-          <button
-            type="button"
-            className="search-clear-btn"
-            onClick={() => setSearchQuery("")}
-            aria-label="Очистить поиск"
-          >
-            ×
-          </button>
-        ) : (
-          <kbd>Себек</kbd>
-        )}
+      <div className="sidebar-search-row">
+        <div className="sidebar-search">
+          <Search size={16} className="sidebar-search-icon" />
+          <input
+            placeholder="Поиск чатов..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={() => setSearchQuery("")}
+              aria-label="Очистить поиск"
+            >
+              ×
+            </button>
+          ) : (
+            <kbd>Себек</kbd>
+          )}
+        </div>
+        <button
+          type="button"
+          className="sidebar-toggle-btn"
+          title="Закрыть боковую панель"
+          aria-label="Закрыть боковую панель"
+          onClick={onToggle}
+        >
+          <PanelLeft size={16} />
+        </button>
       </div>
 
       <button className="new-chat-btn" type="button" onClick={onNewChat}>
@@ -755,7 +766,7 @@ function Sidebar({
 // Top bar
 // ---------------------------------------------------------------------------
 
-function TopBar({ sidebarOpen, onToggleSidebar }) {
+function TopBar() {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -787,15 +798,6 @@ function TopBar({ sidebarOpen, onToggleSidebar }) {
 
   return (
     <header className="topbar">
-      <button
-        type="button"
-        className="sidebar-toggle-btn"
-        title={sidebarOpen ? "Закрыть боковую панель" : "Открыть боковую панель"}
-        aria-label={sidebarOpen ? "Закрыть боковую панель" : "Открыть боковую панель"}
-        onClick={onToggleSidebar}
-      >
-        {sidebarOpen ? <ChevronsLeft size={17} /> : <ChevronsRight size={17} />}
-      </button>
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
           {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
@@ -1769,12 +1771,21 @@ export default function AIAgentDashboard() {
         usageStats={usageStats}
         goalsCount={goalsCount}
         collapsed={!sidebarOpen}
+        onToggle={() => setSidebarOpen(false)}
       />
+      {!sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-toggle-btn sidebar-toggle-btn-floating"
+          title="Открыть боковую панель"
+          aria-label="Открыть боковую панель"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <PanelLeft size={16} />
+        </button>
+      )}
       <div className="main-panel">
-        <TopBar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        />
+        <TopBar />
         <ChatArea
           activeChat={activeChat}
           onCreateChat={handleCreateChat}
@@ -1836,6 +1847,24 @@ const CSS = `
   flex-direction: column;
   padding: 16px 14px;
   gap: 12px;
+}
+
+.sidebar-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-search-row .sidebar-search { flex: 1; min-width: 0; }
+
+.sidebar-toggle-btn {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover { background: var(--bg); color: var(--text); }
+.sidebar-toggle-btn-floating {
+  position: fixed; top: 16px; left: 14px; z-index: 40;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .sidebar-search {
@@ -1995,12 +2024,6 @@ const CSS = `
   flex-shrink: 0; position: relative;
 }
 .topbar-user { display: flex; align-items: center; gap: 8px; }
-.sidebar-toggle-btn {
-  border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-}
-.sidebar-toggle-btn:hover { background: var(--bg); color: var(--text); }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft);
   color: var(--accent); display: flex; align-items: center; justify-content: center;
