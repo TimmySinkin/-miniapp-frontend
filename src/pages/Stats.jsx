@@ -654,8 +654,10 @@ const CSS = `
   .stats-main { overflow: visible; }
 
   .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-user { flex-shrink: 0; }
   .topbar-nav {
     position: static; transform: none; left: auto;
+    flex: 1; justify-content: center;
     gap: 4px; overflow-x: auto; max-width: 100%;
     -ms-overflow-style: none; scrollbar-width: none;
   }
