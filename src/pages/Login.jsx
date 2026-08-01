@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // Вставьте сюда Client ID из Google Cloud Console (APIs & Services → Credentials).
 // Это публичный идентификатор — его наличие в клиентском коде не проблема безопасности,

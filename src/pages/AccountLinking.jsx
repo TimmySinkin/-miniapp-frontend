@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // Те же значения, что в Login.jsx — вынесите в общий файл констант,
 // чтобы не дублировать при следующем изменении.

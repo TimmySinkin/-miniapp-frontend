@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Chart, registerables } from 'chart.js'
 import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
 import AccountSettingsModal from './AccountSettingsModal'
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 Chart.register(...registerables)
 
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']

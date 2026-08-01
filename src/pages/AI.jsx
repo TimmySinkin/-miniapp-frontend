@@ -26,7 +26,8 @@ import {
 } from "lucide-react";
 import AccountSettingsModal from "./AccountSettingsModal";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // ---------------------------------------------------------------------------
 // Static data

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // Те же правила, что и на бэке (RegisterController.validatePassword) —
 // дублируем на фронте только для мгновенной обратной связи (галочки),

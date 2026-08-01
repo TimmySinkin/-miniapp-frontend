@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
 import AccountSettingsModal from './AccountSettingsModal'
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
+const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
 
 // Та же иконка робота, что в шапке AI-агента — чтобы значок был
 // визуально одинаковым во всём приложении.
