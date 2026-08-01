@@ -495,8 +495,9 @@ function Home() {
           .home-user-btn > div:first-child { width: 24px !important; height: 24px !important; font-size: 11px !important; flex-shrink: 0; }
           .home-user-btn span { font-size: 11px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
           .home-nav { gap: 3px; justify-content: flex-start; padding: 0 2px; }
-          .home-nav-btn { padding: 5px 7px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
-          .home-nav-btn svg { width: 12px !important; height: 12px !important; flex-shrink: 0; }
+          .home-nav-btn { padding: 6px 8px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
+          .home-nav-btn svg { width: 14px !important; height: 14px !important; flex-shrink: 0; }
+          .home-nav-btn:not(.active) .home-nav-label { display: none; }
           .home-logout-btn { padding: 5px 9px !important; font-size: 10px !important; gap: 4px !important; }
           .home-logout-btn svg { width: 12px !important; height: 12px !important; }
         }
