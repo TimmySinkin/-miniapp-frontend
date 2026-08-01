@@ -637,7 +637,7 @@ function Sidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          {searchQuery ? (
+          {searchQuery && (
             <button
               type="button"
               className="search-clear-btn"
@@ -646,8 +646,6 @@ function Sidebar({
             >
               ×
             </button>
-          ) : (
-            <kbd>Себек</kbd>
           )}
         </div>
         <button
@@ -1921,11 +1919,6 @@ const CSS = `
 .sidebar-search input {
   border: none; background: transparent; outline: none;
   font-size: 13px; color: var(--text); flex: 1; min-width: 0;
-}
-.sidebar-search kbd {
-  font-size: 11px; color: var(--text-muted); background: var(--panel);
-  border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px;
-  flex-shrink: 0;
 }
 .search-clear-btn {
   border: none; background: transparent; color: var(--text-muted);
