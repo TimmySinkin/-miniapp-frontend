@@ -379,15 +379,15 @@ function Stats() {
               .finally(() => navigate('/login'))
           }}>
             <LogOut size={15} />
-            Выйти
+            <span>Выйти</span>
           </button>
           <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
         </header>
 
         {/* Основной контент */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#222' }}>
+        <div className="stats-content">
+          <div className="stats-page-head">
+            <h2 className="stats-page-title">
               {MONTHS_FULL[displayed.month]} {displayed.year}
             </h2>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -407,7 +407,7 @@ function Stats() {
               {/* KPI карточки */}
               <div style={{ background: 'white', borderRadius: 14, padding: '1.25rem', marginBottom: 16, border: '1px solid #eee' }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#222', marginBottom: '1rem' }}>Аналитика действий за месяц</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                <div className="kpi-grid">
                   {[
                     { label: 'Всего задач', value: stats?.totalTasks || 0, sub: 'за всё время', color: '#534AB7' },
                     { label: 'Выполнено', value: `${completionRate}%`, sub: `${stats?.completedTasks || 0} из ${stats?.totalTasks || 0}`, color: '#1D9E75' },
@@ -424,7 +424,7 @@ function Stats() {
               </div>
 
               {/* Графики */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div className="charts-grid" style={{ marginBottom: 16 }}>
                 {/* График продуктивности — по дням недели, в процентах, с листанием недель */}
                 <div style={{ background: 'white', borderRadius: 14, padding: '1.25rem', border: '1px solid #eee' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -516,7 +516,7 @@ function Stats() {
               {/* Самый активный месяц */}
               <div style={{ background: 'white', borderRadius: 14, padding: '1.25rem', border: '1px solid #eee' }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#222', marginBottom: '1rem' }}>🏆 Инсайты</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                <div className="insights-grid">
                   <div style={{ background: '#EEEDFE', borderRadius: 10, padding: '1rem' }}>
                     <div style={{ fontSize: 12, color: '#534AB7', fontWeight: 500, marginBottom: 4 }}>Самый активный месяц</div>
                     <div style={{ fontSize: 20, fontWeight: 700, color: '#534AB7' }}>{bestMonthName}</div>
@@ -615,6 +615,56 @@ const CSS = `
   padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
 }
 .logout-btn:hover { background: var(--bg); }
+
+/* ---------------- Контент ---------------- */
+
+.stats-content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+.stats-page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; gap: 12px; flex-wrap: wrap;
+}
+.stats-page-title { font-size: 22px; font-weight: 700; color: #222; margin: 0; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.insights-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+/* ---------------- Адаптив ---------------- */
+
+@media (max-width: 900px) {
+  .stats-shell { flex-direction: column; height: auto; min-height: 100vh; overflow: visible; }
+  .stats-sidebar {
+    width: 100%; border-right: none; border-bottom: 1px solid #eee;
+    padding: 1rem; overflow-y: visible;
+  }
+  .stats-main { overflow: visible; }
+
+  .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-nav {
+    position: static; transform: none; left: auto;
+    gap: 4px; overflow-x: auto; max-width: 100%;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .logout-btn span { display: none; }
+
+  .stats-content { padding: 1rem; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .insights-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+@media (max-width: 560px) {
+  .topbar { padding: 10px; gap: 6px; }
+  .avatar { width: 28px; height: 28px; }
+  .nav-btn { padding: 6px 8px; }
+  .stats-page-title { font-size: 19px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .insights-grid { grid-template-columns: 1fr; }
+}
 `
 
 export default Stats
