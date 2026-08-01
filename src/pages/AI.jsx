@@ -481,7 +481,7 @@ function Sidebar({
   onRemovePlan,
   usageStats,
   goalsCount,
-  onClose,
+  collapsed,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState("");
@@ -590,19 +590,8 @@ function Sidebar({
   };
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-top">
-        <span className="sidebar-top-title">Чаты</span>
-        <button
-          type="button"
-          className="sidebar-close-btn"
-          title="Закрыть боковую панель"
-          aria-label="Закрыть боковую панель"
-          onClick={onClose}
-        >
-          <ChevronsLeft size={16} />
-        </button>
-      </div>
+    <aside className={"sidebar" + (collapsed ? " sidebar-collapsed" : "")}>
+      <div className="sidebar-inner">
       <div className="sidebar-search">
         <Search size={16} className="sidebar-search-icon" />
         <input
@@ -757,6 +746,7 @@ function Sidebar({
           </div>
         </section>
       </div>
+      </div>
     </aside>
   );
 }
@@ -765,7 +755,7 @@ function Sidebar({
 // Top bar
 // ---------------------------------------------------------------------------
 
-function TopBar({ sidebarOpen, onOpenSidebar }) {
+function TopBar({ sidebarOpen, onToggleSidebar }) {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -797,17 +787,15 @@ function TopBar({ sidebarOpen, onOpenSidebar }) {
 
   return (
     <header className="topbar">
-      {!sidebarOpen && (
-        <button
-          type="button"
-          className="sidebar-open-btn"
-          title="Открыть боковую панель"
-          aria-label="Открыть боковую панель"
-          onClick={onOpenSidebar}
-        >
-          <ChevronsRight size={17} />
-        </button>
-      )}
+      <button
+        type="button"
+        className="sidebar-toggle-btn"
+        title={sidebarOpen ? "Закрыть боковую панель" : "Открыть боковую панель"}
+        aria-label={sidebarOpen ? "Закрыть боковую панель" : "Открыть боковую панель"}
+        onClick={onToggleSidebar}
+      >
+        {sidebarOpen ? <ChevronsLeft size={17} /> : <ChevronsRight size={17} />}
+      </button>
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
           {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
@@ -1769,25 +1757,23 @@ export default function AIAgentDashboard() {
   return (
     <div className="app-shell">
       <style>{CSS}</style>
-      {sidebarOpen && (
-        <Sidebar
-          chats={chats}
-          activeChatId={activeChatId}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          onToggleFavorite={handleToggleFavorite}
-          onRenameChat={handleRenameChat}
-          onDeleteChat={handleDeleteChat}
-          onRemovePlan={handleRemovePlan}
-          usageStats={usageStats}
-          goalsCount={goalsCount}
-          onClose={() => setSidebarOpen(false)}
-        />
-      )}
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        onToggleFavorite={handleToggleFavorite}
+        onRenameChat={handleRenameChat}
+        onDeleteChat={handleDeleteChat}
+        onRemovePlan={handleRemovePlan}
+        usageStats={usageStats}
+        goalsCount={goalsCount}
+        collapsed={!sidebarOpen}
+      />
       <div className="main-panel">
         <TopBar
           sidebarOpen={sidebarOpen}
-          onOpenSidebar={() => setSidebarOpen(true)}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
         />
         <ChatArea
           activeChat={activeChat}
@@ -1836,22 +1822,21 @@ const CSS = `
   flex-shrink: 0;
   background: var(--panel);
   border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 0.18s ease, border-color 0.18s ease;
+}
+.sidebar-collapsed {
+  width: 0;
+  border-right-color: transparent;
+}
+.sidebar-inner {
+  width: 300px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding: 16px 14px;
   gap: 12px;
 }
-
-.sidebar-top {
-  display: flex; align-items: center; justify-content: space-between;
-}
-.sidebar-top-title { font-size: 14px; font-weight: 700; color: var(--text); }
-.sidebar-close-btn {
-  border: none; background: transparent; color: var(--text-muted); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-}
-.sidebar-close-btn:hover { background: var(--bg); color: var(--text); }
 
 .sidebar-search {
   display: flex;
@@ -2010,12 +1995,12 @@ const CSS = `
   flex-shrink: 0; position: relative;
 }
 .topbar-user { display: flex; align-items: center; gap: 8px; }
-.sidebar-open-btn {
+.sidebar-toggle-btn {
   border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
 }
-.sidebar-open-btn:hover { background: var(--bg); color: var(--text); }
+.sidebar-toggle-btn:hover { background: var(--bg); color: var(--text); }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft);
   color: var(--accent); display: flex; align-items: center; justify-content: center;
