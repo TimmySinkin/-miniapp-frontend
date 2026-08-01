@@ -55,10 +55,10 @@ function RobotIcon({ size = 16 }) {
 }
 
 const NAV_ITEMS = [
-  { icon: Calendar, label: "Календарь", to: "/home" },
+  { icon: Calendar, to: "/home" },
   { icon: RobotIcon, label: "AI-агент", active: true, to: "/ai" },
-  { icon: BarChart3, label: "Статистика", to: "/stats" },
-  { icon: Target, label: "Цели", to: null },
+  { icon: BarChart3, to: "/stats" },
+  { icon: Target, to: null },
 ];
 
 const GOAL_TEMPLATES = [
