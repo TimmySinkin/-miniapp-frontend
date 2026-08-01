@@ -853,14 +853,14 @@ function TopBar() {
               title={disabled ? "Скоро" : undefined}
             >
               <Icon size={16} />
-              {item.label}
+              <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
       <button className="logout-btn" type="button" onClick={handleLogout}>
         <LogOut size={15} />
-        Выйти
+        <span>Выйти</span>
       </button>
       <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadAvatar(); }} />
     </header>
@@ -2360,16 +2360,19 @@ const CSS = `
     background: rgba(0,0,0,0.4);
   }
 
-  /* Шапка: навигация сжимается по паддингам/шрифту, но текст остаётся —
-     при нехватке места пускаем её в горизонтальный скролл. */
+  /* Шапка: навигация центрируется в оставшемся пространстве; подпись
+     остаётся только у активного пункта — остальные иконками (как в Stats.jsx). */
   .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-user { flex-shrink: 0; }
   .topbar-nav {
     position: static; transform: none; left: auto;
+    flex: 1; justify-content: center;
     gap: 4px; overflow-x: auto; max-width: 100%;
     -ms-overflow-style: none; scrollbar-width: none;
   }
   .topbar-nav::-webkit-scrollbar { display: none; }
   .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .nav-btn:not(.active) span { display: none; }
   .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .logout-btn span { display: none; }
