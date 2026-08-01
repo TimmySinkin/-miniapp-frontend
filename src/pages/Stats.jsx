@@ -27,10 +27,10 @@ function RobotIcon({ size = 16 }) {
 // та же схема (жёстко проставленный active на текущем разделе), что и в
 // TopBar из AI.jsx.
 const NAV_ITEMS = [
-  { icon: Calendar, label: 'Календарь', to: '/home' },
-  { icon: RobotIcon, label: 'AI-агент', to: '/ai' },
+  { icon: Calendar, to: '/home' },
+  { icon: RobotIcon, to: '/ai' },
   { icon: BarChart3, label: 'Статистика', active: true, to: '/stats' },
-  { icon: Target, label: 'Цели', to: null },
+  { icon: Target, to: null },
 ]
 
 // Цвета категорий — используются в сайдбаре, графике распределения и ежемесячном прогрессе
