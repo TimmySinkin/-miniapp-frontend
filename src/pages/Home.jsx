@@ -470,24 +470,43 @@ function Home() {
         .home-header {
           display: flex; align-items: center; gap: 24px; background: white; border-radius: 12px;
           padding: 14px 28px; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-          position: relative; flex-wrap: wrap;
+          position: relative; flex-wrap: nowrap;
         }
         .home-nav { display: flex; gap: 6px; position: absolute; left: 50%; transform: translateX(-50%); }
+
+        /* Планшет: чуть уже — только сжимаем отступы, строка не ломается */
         @media (max-width: 768px) {
-          .home-header { flex-direction: column; align-items: stretch; padding: 14px 16px; gap: 10px; }
-          .home-nav { position: static; left: auto; transform: none; justify-content: center; flex-wrap: wrap; order: 2; }
-          .home-user-btn { order: 1; }
-          .home-logout-btn { order: 3; margin-left: 0 !important; align-self: center; }
+          .home-header { padding: 12px 16px; gap: 12px; }
+          .home-nav { gap: 3px; }
+          .home-nav-btn { padding: 7px 10px !important; font-size: 12.5px !important; gap: 5px !important; }
         }
+
+        /* Телефон: всё в одну строку, максимально компактно — как в макете */
         @media (max-width: 480px) {
-          .home-nav-btn { padding: 8px !important; }
-          .home-nav-label { display: none; }
+          .home-header { padding: 8px 10px; gap: 6px; border-radius: 10px; }
+          .home-user-btn { padding: 3px 4px; margin: -3px -4px; gap: 5px !important; flex-shrink: 0; }
+          .home-user-btn > div:first-child { width: 24px !important; height: 24px !important; font-size: 11px !important; }
+          .home-user-btn span { font-size: 11px !important; white-space: nowrap; }
+          .home-nav { gap: 2px; }
+          .home-nav-btn { padding: 5px 6px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
+          .home-nav-btn svg { width: 12px !important; height: 12px !important; }
+          .home-logout-btn { padding: 5px 8px !important; font-size: 10px !important; gap: 4px !important; flex-shrink: 0; }
+          .home-logout-btn svg { width: 12px !important; height: 12px !important; }
+        }
+        @media (max-width: 360px) {
+          .home-nav-label { font-size: 9px !important; }
+          .home-nav-btn { padding: 5px 4px !important; }
         }
 
         .home-months-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-        @media (max-width: 900px) { .home-months-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 640px) { .home-months-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
-        @media (max-width: 380px) { .home-months-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .home-months-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+        @media (max-width: 480px) { .home-months-grid { gap: 10px; } }
+
+        .month-card-title { font-size: 18px; }
+        @media (max-width: 480px) { .month-card-title { font-size: 11.5px; letter-spacing: 0.08em; } }
+
+        .month-card-badge { font-size: 11px; padding: 3px 8px; }
+        @media (max-width: 480px) { .month-card-badge { font-size: 8.5px; padding: 2px 5px; top: 8px !important; right: 8px !important; } }
       `}</style>
       <div className="home-header">
         <div className="home-user-btn" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px', margin: '-4px -8px', transition: 'background 0.15s' }}>
@@ -563,11 +582,11 @@ function Home() {
             >
               {img ? <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: '#222' }} />}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.75) 100%)' }} />
-              <div style={{ position: 'absolute', top: '16px', left: '0', right: '0', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', fontWeight: '400', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.2em', fontFamily: 'Georgia,serif' }}>
+              <div className="month-card-title" style={{ position: 'absolute', top: '16px', left: '0', right: '0', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', fontWeight: '400', textTransform: 'uppercase', letterSpacing: '0.2em', fontFamily: 'Georgia,serif' }}>
                 {name}
                 <div style={{ width: '55%', height: '1.5px', background: 'white', marginTop: '6px' }} />
               </div>
-              {isCurrent && <div style={{ position: 'absolute', top: '12px', right: '12px', background: '#534AB7', color: 'white', borderRadius: '6px', fontSize: '11px', padding: '3px 8px', fontWeight: '600' }}>сейчас</div>}
+              {isCurrent && <div className="month-card-badge" style={{ position: 'absolute', top: '12px', right: '12px', background: '#534AB7', color: 'white', borderRadius: '6px', fontWeight: '600' }}>сейчас</div>}
             </div>
           )
         })}
