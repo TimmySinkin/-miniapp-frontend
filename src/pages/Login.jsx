@@ -442,6 +442,32 @@ function Login() {
           cursor: not-allowed; opacity: 0.65; transition: background 0.15s;
         }
         .social-btn-wide:hover { background: rgba(255,255,255,0.16); }
+
+        /* --- Адаптив --- */
+        .login-card {
+          width: 400px;
+          max-width: 90vw;
+          padding: 2.75rem 2.25rem;
+          box-sizing: border-box;
+        }
+        .login-title { font-size: 30px; }
+        .modal-card {
+          padding: 2rem;
+          max-width: 90vw;
+          box-sizing: border-box;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+        .modal-card.onboarding { width: 360px; }
+        .modal-card.forgot { width: 380px; }
+
+        @media (max-width: 480px) {
+          .login-card { padding: 2rem 1.25rem; border-radius: 18px; }
+          .login-title { font-size: 24px; }
+          .modal-card { padding: 1.5rem 1.25rem; border-radius: 16px; }
+          .social-btn-wide { font-size: 12.5px; padding: 10px 0; }
+          .divider-row span { font-size: 11.5px; }
+        }
       `}</style>
 
             <div style={{
@@ -450,9 +476,8 @@ function Login() {
                 backdropFilter: 'blur(4px)'
             }} />
 
-            <div style={{
+            <div className="login-card" style={{
                 position: 'relative', zIndex: 1,
-                width: '400px', padding: '2.75rem 2.25rem',
                 background: 'rgba(255,255,255,0.12)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
@@ -461,9 +486,9 @@ function Login() {
                 boxShadow: '0 8px 40px rgba(0,0,0,0.3)'
             }}>
 
-                <h2 style={{
+                <h2 className="login-title" style={{
                     color: 'white', textAlign: 'left',
-                    fontSize: '30px', fontWeight: '700',
+                    fontWeight: '700',
                     marginBottom: '6px', fontFamily: 'Georgia, serif'
                 }}>
                     Добро пожаловать
@@ -619,10 +644,10 @@ function Login() {
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 10,
                     background: 'rgba(0,0,0,0.55)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '16px', boxSizing: 'border-box'
                 }}>
-                    <div style={{
-                        width: '360px', padding: '2rem',
+                    <div className="modal-card onboarding" style={{
                         background: 'rgba(30,30,32,0.95)',
                         backdropFilter: 'blur(12px)',
                         borderRadius: '20px',
@@ -670,13 +695,15 @@ function Login() {
                     style={{
                         position: 'fixed', inset: 0, zIndex: 10,
                         background: 'rgba(0,0,0,0.55)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '16px', boxSizing: 'border-box'
                     }}
                     onClick={() => setForgotOpen(false)}
                 >
                     <div
+                        className="modal-card forgot"
                         style={{
-                            width: '380px', padding: '2rem', position: 'relative',
+                            position: 'relative',
                             background: 'rgba(30,30,32,0.95)',
                             backdropFilter: 'blur(12px)',
                             borderRadius: '20px',

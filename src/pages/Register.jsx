@@ -268,9 +268,9 @@ function Register() {
   }
 
   return (
-    <div style={{
-      height: '100vh', display: 'flex',
-      background: '#0a0a0a', overflow: 'hidden'
+    <div className="register-page" style={{
+      display: 'flex',
+      background: '#0a0a0a'
     }}>
       <style>{`
         .reg-input::placeholder { color: rgba(255,255,255,0.35); }
@@ -458,11 +458,41 @@ function Register() {
           display: flex; align-items: center; justify-content: center;
           margin: 6px auto 0; animation: otpPopIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
         }
+
+        /* --- Адаптив --- */
+        .register-page {
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+        .register-image-panel {
+          width: 45%;
+          flex-shrink: 0;
+        }
+        .register-form-panel {
+          padding: 2rem 4rem;
+          box-sizing: border-box;
+          min-width: 0;
+        }
+
+        /* Ниже 900px — картинка скрывается, форма растягивается на всю ширину */
+        @media (max-width: 900px) {
+          .register-page { flex-direction: column; overflow-y: auto; }
+          .register-image-panel { display: none; }
+          .register-form-panel { padding: 2.5rem 2rem; width: 100%; overflow: visible; }
+        }
+
+        @media (max-width: 480px) {
+          .register-form-panel { padding: 2rem 1.25rem; }
+          .otp-stage-wrap { width: 100%; max-width: 280px; }
+          .otp-phone-wrap { width: 100%; max-width: 220px; }
+          .otp-phone { min-height: 460px; padding: 44px 18px 22px; }
+          .otp-digit-box { width: 48px; height: 54px; font-size: 20px; }
+        }
       `}</style>
 
-      <div style={{
-        width: '45%', position: 'relative', overflow: 'hidden',
-        borderRadius: '0 24px 24px 0', flexShrink: 0
+      <div className="register-image-panel" style={{
+        position: 'relative', overflow: 'hidden',
+        borderRadius: '0 24px 24px 0'
       }}>
         <img src="/bg-register.jpg" style={{
           width: '100%', height: '100%', objectFit: 'cover',
@@ -474,9 +504,9 @@ function Register() {
         }} />
       </div>
 
-      <div style={{
+      <div className="register-form-panel" style={{
         flex: 1, display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', padding: '2rem 4rem', overflow: 'hidden'
+        justifyContent: 'center', overflow: 'hidden'
       }}>
 
         {!awaitingCode ? (
@@ -530,7 +560,7 @@ function Register() {
                   className={'reg-floating-label' + (loginFocused || login ? ' floated' : '')}
                   htmlFor="reg-login-field"
                 >
-                  Почта
+                  Имя
                 </label>
               </div>
 
@@ -550,7 +580,7 @@ function Register() {
                   className={'reg-floating-label' + (emailFocused || email ? ' floated' : '')}
                   htmlFor="reg-email-field"
                 >
-                  Почта
+                  Email
                 </label>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: '-6px 0 12px 4px' }}>
