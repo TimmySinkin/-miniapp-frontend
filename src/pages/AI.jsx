@@ -589,8 +589,45 @@ function Sidebar({
     );
   };
 
+  if (collapsed) {
+    return (
+      <aside className="sidebar sidebar-collapsed sidebar-rail">
+        <button
+          type="button"
+          className="rail-btn"
+          title="Открыть боковую панель"
+          aria-label="Открыть боковую панель"
+          onClick={onToggle}
+        >
+          <PanelLeft size={16} />
+        </button>
+        <button
+          type="button"
+          className="rail-new-chat-btn"
+          title="Новый чат"
+          aria-label="Новый чат"
+          onClick={onNewChat}
+        >
+          <Plus size={18} />
+        </button>
+        <button type="button" className="rail-btn" title="Избранное" onClick={onToggle}>
+          <Star size={17} />
+        </button>
+        <button type="button" className="rail-btn" title="История чатов" onClick={onToggle}>
+          <MessageSquare size={17} />
+        </button>
+        <button type="button" className="rail-btn" title="Активные планы" onClick={onToggle}>
+          <Target size={17} />
+        </button>
+        <button type="button" className="rail-btn" title="Статистика" onClick={onToggle}>
+          <BarChart3 size={17} />
+        </button>
+      </aside>
+    );
+  }
+
   return (
-    <aside className={"sidebar" + (collapsed ? " sidebar-collapsed" : "")}>
+    <aside className="sidebar">
       <div className="sidebar-inner">
       <div className="sidebar-search-row">
         <div className="sidebar-search">
@@ -1771,19 +1808,8 @@ export default function AIAgentDashboard() {
         usageStats={usageStats}
         goalsCount={goalsCount}
         collapsed={!sidebarOpen}
-        onToggle={() => setSidebarOpen(false)}
+        onToggle={() => setSidebarOpen((v) => !v)}
       />
-      {!sidebarOpen && (
-        <button
-          type="button"
-          className="sidebar-toggle-btn sidebar-toggle-btn-floating"
-          title="Открыть боковую панель"
-          aria-label="Открыть боковую панель"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <PanelLeft size={16} />
-        </button>
-      )}
       <div className="main-panel">
         <TopBar />
         <ChatArea
@@ -1837,8 +1863,7 @@ const CSS = `
   transition: width 0.18s ease, border-color 0.18s ease;
 }
 .sidebar-collapsed {
-  width: 0;
-  border-right-color: transparent;
+  width: 64px;
 }
 .sidebar-inner {
   width: 300px;
@@ -1848,6 +1873,26 @@ const CSS = `
   padding: 16px 14px;
   gap: 12px;
 }
+
+.sidebar-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+}
+.rail-btn {
+  width: 36px; height: 36px; border-radius: 9px; border: none; background: transparent;
+  color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.rail-btn:hover { background: var(--bg); color: var(--text); }
+.rail-new-chat-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--accent);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.rail-new-chat-btn:hover { background: #5b4de0; }
 
 .sidebar-search-row {
   display: flex;
@@ -1862,10 +1907,6 @@ const CSS = `
   width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
 }
 .sidebar-toggle-btn:hover { background: var(--bg); color: var(--text); }
-.sidebar-toggle-btn-floating {
-  position: fixed; top: 16px; left: 14px; z-index: 40;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
 
 .sidebar-search {
   display: flex;
