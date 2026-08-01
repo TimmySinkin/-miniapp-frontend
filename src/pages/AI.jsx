@@ -801,7 +801,7 @@ function Sidebar({
 // Top bar
 // ---------------------------------------------------------------------------
 
-function TopBar() {
+function TopBar({ onMenuClick }) {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -833,6 +833,15 @@ function TopBar() {
 
   return (
     <header className="topbar">
+      <button
+        type="button"
+        className="mobile-menu-btn"
+        title="Меню"
+        aria-label="Открыть меню"
+        onClick={onMenuClick}
+      >
+        <PanelLeft size={18} />
+      </button>
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
           {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
@@ -1577,6 +1586,15 @@ export default function AIAgentDashboard() {
   const [usageStats, setUsageStats] = useState(() => loadUsageStats(null));
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // На мобильных экранах сайдбар превращается в выезжающую панель поверх
+  // контента — по умолчанию она должна быть закрыта, иначе при заходе
+  // с телефона пользователь сразу упирается в открытый drawer.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 900) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   // Логин получаем через httpOnly cookie (/api/me), а не из localStorage —
   // так срок жизни сессии реально зависит от "запомнить меня" на логине.
   useEffect(() => {
@@ -1745,7 +1763,10 @@ export default function AIAgentDashboard() {
 
   const handleNewChat = () => setActiveChatId(null);
 
-  const handleSelectChat = (id) => setActiveChatId(id);
+  const handleSelectChat = (id) => {
+    setActiveChatId(id);
+    if (typeof window !== "undefined" && window.innerWidth <= 900) setSidebarOpen(false);
+  };
 
   // Активирует план как "активный" в панели слева. Раньше вызывалось только
   // по клику на отдельную кнопку в чате — теперь вызывается АВТОМАТИЧЕСКИ
@@ -1808,8 +1829,9 @@ export default function AIAgentDashboard() {
         collapsed={!sidebarOpen}
         onToggle={() => setSidebarOpen((v) => !v)}
       />
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
       <div className="main-panel">
-        <TopBar />
+        <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
         <ChatArea
           activeChat={activeChat}
           onCreateChat={handleCreateChat}
@@ -2323,9 +2345,62 @@ const CSS = `
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
+.mobile-menu-btn {
+  display: none;
+  border: none; background: transparent; color: var(--text);
+  align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer; flex-shrink: 0;
+}
+.mobile-menu-btn:hover { background: var(--bg); }
+
+.sidebar-backdrop { display: none; }
+
 @media (max-width: 900px) {
-  .sidebar { display: none; }
-  .topbar-nav { display: none; }
+  .app-shell { position: relative; overflow-x: hidden; }
+
+  .mobile-menu-btn { display: flex; }
+
+  /* Сайдбар превращается в выезжающую панель поверх контента */
+  .sidebar {
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
+    width: 280px; max-width: 84vw;
+    transform: translateX(-100%);
+    box-shadow: 0 0 32px rgba(0,0,0,0.25);
+  }
+  .sidebar:not(.sidebar-collapsed) { transform: translateX(0); }
+  .sidebar-collapsed { width: 280px; max-width: 84vw; }
+  .sidebar-inner { width: 100%; }
+
+  .sidebar-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 40;
+    background: rgba(0,0,0,0.4);
+  }
+
+  /* Навигация в шапке — только иконки, без абсолютного центрирования */
+  .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-nav {
+    position: static; transform: none; left: auto;
+    gap: 2px; overflow-x: auto;
+  }
+  .nav-btn { padding: 8px; }
+  .nav-btn span, .nav-btn { font-size: 0; }
+  .nav-btn svg { flex-shrink: 0; }
+  .user-name { display: none; }
+  .logout-btn span { display: none; }
+  .logout-btn { padding: 8px; }
+
   .chat-scroll, .composer { padding-left: 16px; padding-right: 16px; }
+  .msg-row, .user-row { max-width: min(640px, 100%); }
+  .templates-menu { width: min(300px, 90vw); }
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 10px; gap: 6px; }
+  .avatar { width: 28px; height: 28px; }
+  .chat-scroll { padding: 18px 12px; gap: 14px; }
+  .composer { padding: 10px 12px 12px; }
+  .bubble { padding: 13px 14px; font-size: 13.5px; }
+  .composer-hint { display: none; }
+  .attachment-chip { max-width: 140px; }
 }
 `;
