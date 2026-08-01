@@ -801,7 +801,7 @@ function Sidebar({
 // Top bar
 // ---------------------------------------------------------------------------
 
-function TopBar({ onMenuClick }) {
+function TopBar() {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -833,15 +833,6 @@ function TopBar({ onMenuClick }) {
 
   return (
     <header className="topbar">
-      <button
-        type="button"
-        className="mobile-menu-btn"
-        title="Меню"
-        aria-label="Открыть меню"
-        onClick={onMenuClick}
-      >
-        <PanelLeft size={18} />
-      </button>
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
           {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
@@ -1831,7 +1822,7 @@ export default function AIAgentDashboard() {
       />
       {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
       <div className="main-panel">
-        <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
+        <TopBar />
         <ChatArea
           activeChat={activeChat}
           onCreateChat={handleCreateChat}
@@ -2345,49 +2336,43 @@ const CSS = `
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-.mobile-menu-btn {
-  display: none;
-  border: none; background: transparent; color: var(--text);
-  align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 9px; cursor: pointer; flex-shrink: 0;
-}
-.mobile-menu-btn:hover { background: var(--bg); }
-
 .sidebar-backdrop { display: none; }
 
 @media (max-width: 900px) {
-  .app-shell { position: relative; overflow-x: hidden; }
+  .app-shell { overflow-x: hidden; }
 
-  .mobile-menu-btn { display: flex; }
+  /* Узкая иконка-панель всегда видна и остаётся частью обычной раскладки
+     (не оверлей) — как на десктопе, просто уже. */
+  .sidebar-collapsed { width: 52px; }
+  .sidebar-collapsed .rail-btn,
+  .sidebar-collapsed .rail-new-chat-btn { width: 34px; height: 34px; }
 
-  /* Сайдбар превращается в выезжающую панель поверх контента */
-  .sidebar {
+  /* А вот развёрнутая панель (когда пользователь тапнул на "раскрыть")
+     становится выезжающей поверх контента — иначе ей просто некуда деться. */
+  .sidebar:not(.sidebar-collapsed) {
     position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
     width: 280px; max-width: 84vw;
-    transform: translateX(-100%);
     box-shadow: 0 0 32px rgba(0,0,0,0.25);
   }
-  .sidebar:not(.sidebar-collapsed) { transform: translateX(0); }
-  .sidebar-collapsed { width: 280px; max-width: 84vw; }
-  .sidebar-inner { width: 100%; }
-
+  .sidebar:not(.sidebar-collapsed) .sidebar-inner { width: 100%; }
   .sidebar-backdrop {
     display: block; position: fixed; inset: 0; z-index: 40;
     background: rgba(0,0,0,0.4);
   }
 
-  /* Навигация в шапке — только иконки, без абсолютного центрирования */
+  /* Шапка: навигация сжимается по паддингам/шрифту, но текст остаётся —
+     при нехватке места пускаем её в горизонтальный скролл. */
   .topbar { padding: 12px 14px; gap: 10px; }
   .topbar-nav {
     position: static; transform: none; left: auto;
-    gap: 2px; overflow-x: auto;
+    gap: 4px; overflow-x: auto; max-width: 100%;
+    -ms-overflow-style: none; scrollbar-width: none;
   }
-  .nav-btn { padding: 8px; }
-  .nav-btn span, .nav-btn { font-size: 0; }
-  .nav-btn svg { flex-shrink: 0; }
-  .user-name { display: none; }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .logout-btn span { display: none; }
-  .logout-btn { padding: 8px; }
 
   .chat-scroll, .composer { padding-left: 16px; padding-right: 16px; }
   .msg-row, .user-row { max-width: min(640px, 100%); }
@@ -2397,6 +2382,7 @@ const CSS = `
 @media (max-width: 480px) {
   .topbar { padding: 10px; gap: 6px; }
   .avatar { width: 28px; height: 28px; }
+  .nav-btn { padding: 6px 8px; }
   .chat-scroll { padding: 18px 12px; gap: 14px; }
   .composer { padding: 10px 12px 12px; }
   .bubble { padding: 13px 14px; font-size: 13.5px; }
