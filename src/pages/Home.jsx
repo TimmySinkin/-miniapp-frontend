@@ -468,34 +468,40 @@ function Home() {
         .home-month-card:hover { transform: scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
 
         .home-header {
-          display: flex; align-items: center; gap: 24px; background: white; border-radius: 12px;
+          display: flex; align-items: center; gap: 16px; background: white; border-radius: 12px;
           padding: 14px 28px; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-          position: relative; flex-wrap: nowrap;
+          flex-wrap: nowrap;
         }
-        .home-nav { display: flex; gap: 6px; position: absolute; left: 50%; transform: translateX(-50%); }
+        .home-user-btn { flex-shrink: 0; }
+        .home-nav {
+          display: flex; align-items: center; gap: 6px; flex: 1 1 auto;
+          justify-content: center; min-width: 0; overflow-x: auto; scrollbar-width: none;
+        }
+        .home-nav::-webkit-scrollbar { display: none; }
+        .home-nav-btn { flex-shrink: 0; white-space: nowrap; }
+        .home-logout-btn { flex-shrink: 0; }
 
         /* Планшет: чуть уже — только сжимаем отступы, строка не ломается */
         @media (max-width: 768px) {
-          .home-header { padding: 12px 16px; gap: 12px; }
-          .home-nav { gap: 3px; }
+          .home-header { padding: 12px 16px; gap: 10px; }
+          .home-nav { gap: 3px; justify-content: flex-start; }
           .home-nav-btn { padding: 7px 10px !important; font-size: 12.5px !important; gap: 5px !important; }
         }
 
-        /* Телефон: всё в одну строку, максимально компактно — как в макете */
+        /* Телефон: всё в одну строку, максимально компактно — как в макете. Если совсем не влезает — меню скроллится по горизонтали, а не обрезается */
         @media (max-width: 480px) {
           .home-header { padding: 8px 10px; gap: 6px; border-radius: 10px; }
-          .home-user-btn { padding: 3px 4px; margin: -3px -4px; gap: 5px !important; flex-shrink: 0; }
-          .home-user-btn > div:first-child { width: 24px !important; height: 24px !important; font-size: 11px !important; }
-          .home-user-btn span { font-size: 11px !important; white-space: nowrap; }
-          .home-nav { gap: 2px; }
-          .home-nav-btn { padding: 5px 6px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
-          .home-nav-btn svg { width: 12px !important; height: 12px !important; }
-          .home-logout-btn { padding: 5px 8px !important; font-size: 10px !important; gap: 4px !important; flex-shrink: 0; }
+          .home-user-btn { padding: 3px 4px; margin: -3px -4px; gap: 5px !important; max-width: 92px; overflow: hidden; }
+          .home-user-btn > div:first-child { width: 24px !important; height: 24px !important; font-size: 11px !important; flex-shrink: 0; }
+          .home-user-btn span { font-size: 11px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+          .home-nav { gap: 3px; justify-content: flex-start; padding: 0 2px; }
+          .home-nav-btn { padding: 5px 7px !important; font-size: 10px !important; gap: 3px !important; border-radius: 7px !important; }
+          .home-nav-btn svg { width: 12px !important; height: 12px !important; flex-shrink: 0; }
+          .home-logout-btn { padding: 5px 9px !important; font-size: 10px !important; gap: 4px !important; }
           .home-logout-btn svg { width: 12px !important; height: 12px !important; }
         }
         @media (max-width: 360px) {
-          .home-nav-label { font-size: 9px !important; }
-          .home-nav-btn { padding: 5px 4px !important; }
+          .home-nav-btn { padding: 5px 6px !important; }
         }
 
         .home-months-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
