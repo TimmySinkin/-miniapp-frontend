@@ -462,8 +462,8 @@ function Register() {
 
         /* --- Адаптив --- */
         .register-page {
-          min-height: 100vh;
-          overflow-x: hidden;
+          height: 100vh;
+          overflow: hidden;
         }
         .register-image-panel {
           width: 45%;
@@ -477,7 +477,7 @@ function Register() {
 
         /* Ниже 900px — картинка скрывается, форма растягивается на всю ширину */
         @media (max-width: 900px) {
-          .register-page { flex-direction: column; overflow-y: auto; }
+          .register-page { height: auto; min-height: 100vh; flex-direction: column; overflow-y: auto; }
           .register-image-panel { display: none; }
           .register-form-panel { padding: 2.5rem 2rem; width: 100%; overflow: visible; }
         }
@@ -507,7 +507,7 @@ function Register() {
 
       <div className="register-form-panel" style={{
         flex: 1, display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', overflow: 'hidden'
+        justifyContent: 'center', overflowY: 'auto'
       }}>
 
         {!awaitingCode ? (
