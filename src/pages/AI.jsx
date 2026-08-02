@@ -83,7 +83,7 @@ function deriveChatTitle(text) {
 // "за 14 дн."). Возвращает число дней или null, если срок не упомянут —
 // используется, чтобы понять, что сообщение описывает "план" с дедлайном.
 function parseDurationDays(text) {
-  const match = (text || "").match(/(\d+)\s*(дн(?:ей|я|ь)?|day|days)/i);
+  const match = (text || "").match(/(\d+)\s*(дн(?:ей|я|ь|и)?|день|day|days)/i);
   if (!match) return null;
   const n = parseInt(match[1], 10);
   return Number.isFinite(n) && n > 0 ? n : null;
