@@ -805,16 +805,17 @@ function Sidebar({
 function TopBar() {
   const navigate = useNavigate();
   const [login, setLogin] = useState(null);
+  const [displayName, setDisplayName] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Аватарка тянется отдельно от /api/me, из того же эндпоинта, что
-  // и модалка настроек — обновляем при закрытии модалки, чтобы новое
-  // фото сразу подхватывалось в шапке.
+  // Аватарка и отображаемое имя тянутся отдельно от /api/me, из того же
+  // эндпоинта, что и модалка настроек — обновляем при закрытии модалки,
+  // чтобы новое фото/имя сразу подхватывались в шапке (как на Home.jsx).
   const loadAvatar = () => {
     fetch(`${API_BASE}/api/account/providers`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (data) setAvatarUrl(data.avatar_url); })
+      .then((data) => { if (data) { setAvatarUrl(data.avatar_url); setDisplayName(data.name || null); } })
       .catch(() => {});
   };
 
@@ -836,9 +837,9 @@ function TopBar() {
     <header className="topbar">
       <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: "pointer" }}>
         <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
-          {!avatarUrl && (login ? login[0].toUpperCase() : "T")}
+          {!avatarUrl && (displayName || login || "T")[0].toUpperCase()}
         </div>
-        <span className="user-name">{login || "tim"}</span>
+        <span className="user-name">{displayName || login || "tim"}</span>
       </div>
       <nav className="topbar-nav">
         {NAV_ITEMS.map((item) => {
@@ -950,12 +951,19 @@ function WelcomeMessage() {
   );
 }
 
-function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar }) {
+function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar, questions, onAnswerClarify }) {
   const [copied, setCopied] = useState(false);
   const [savingToCalendar, setSavingToCalendar] = useState(false);
   const [savedToCalendar, setSavedToCalendar] = useState(false);
   const [savedDateLabel, setSavedDateLabel] = useState("");
   const [calendarError, setCalendarError] = useState(false);
+
+  // Выбор пользователя по каждому уточняющему вопросу: { questionId: "выбранный вариант" }.
+  // Один вариант на вопрос (одиночный выбор), как радио-кнопки.
+  const [selections, setSelections] = useState({});
+  // После отправки ответа блок вопросов "гаснет" — чтобы нельзя было
+  // отправить один и тот же уточняющий раунд повторно.
+  const [answered, setAnswered] = useState(false);
 
   const handleCopy = async () => {
     const html = renderMarkdown(text);
@@ -980,6 +988,43 @@ function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar }) {
     }
   };
 
+  const handleSelectOption = (questionId, option) => {
+    if (answered) return;
+    setSelections((prev) => ({ ...prev, [questionId]: option }));
+  };
+
+  const allAnswered = questions && questions.length > 0 &&
+    questions.every((q) => !!selections[q.id]);
+
+  const handleSubmitAnswers = () => {
+    if (!allAnswered || answered) return;
+    setAnswered(true);
+    // Склеиваем ответы в одну обычную реплику пользователя — модель сама
+    // разберётся с контекстом по тексту вопросов+ответов, отдельного
+    // структурированного формата для этого не нужно.
+    const combined = questions
+      .map((q) => `${q.question} ${selections[q.id]}`)
+      .join("\n");
+    onAnswerClarify(combined);
+  };
+
+  // "Пропустить" — пользователь не хочет отвечать на уточняющие вопросы.
+  // Отправляем модели явную реплику-триггер: она сама выбирает варианты
+  // из разных категорий, а не сужается до одного, как если бы пользователь
+  // ответил на конкретный вопрос. Бэкенд (см. CHAT_SYSTEM_PROMPT) распознаёт
+  // эту фразу и отвечает широким набором (например, по 2-3 варианта на
+  // каждую предложенную категорию), либо, если исходный запрос был
+  // фактическим/поисковым, просто даёт содержательный ответ по существу.
+  const handleSkip = () => {
+    if (answered) return;
+    setAnswered(true);
+    onAnswerClarify(
+      "Пропускаю уточнение — не важно, выбери сам за меня. Предложи широкий вариант: " +
+      "возьми понемногу из разных категорий/вариантов, которые ты предлагал (например, " +
+      "по 2–3 штуки на каждый), а не зацикливайся на одном варианте."
+    );
+  };
+
   return (
     <div className="msg-row">
       <div className="bot-avatar">🤖</div>
@@ -988,6 +1033,49 @@ function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar }) {
           className="md-content"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}
         />
+        {questions && questions.length > 0 && (
+          <div className="clarify-questions-block">
+            {questions.map((q) => (
+              <div className="clarify-question" key={q.id}>
+                <div className="clarify-question-text">{q.question}</div>
+                <div className="clarify-options-row">
+                  {q.options.map((opt) => (
+                    <button
+                      type="button"
+                      key={opt}
+                      className={
+                        "clarify-option-btn" +
+                        (selections[q.id] === opt ? " clarify-option-btn-selected" : "")
+                      }
+                      disabled={answered}
+                      onClick={() => handleSelectOption(q.id, opt)}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="clarify-actions-row">
+              <button
+                type="button"
+                className="clarify-submit-btn"
+                disabled={!allAnswered || answered}
+                onClick={handleSubmitAnswers}
+              >
+                {answered ? "Ответ отправлен" : "Ответить"}
+              </button>
+              <button
+                type="button"
+                className="clarify-skip-btn"
+                disabled={answered}
+                onClick={handleSkip}
+              >
+                Пропустить
+              </button>
+            </div>
+          </div>
+        )}
         {canAcceptPlan && (
           <div className="plan-actions-row">
             <button
@@ -1195,21 +1283,17 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const handleSend = async () => {
-    const text = value.trim();
-    if ((!text && attachments.length === 0) || typing) return;
+  // Общая логика отправки сообщения в /api/ai/chat — используется и из
+  // текстового поля ввода (handleSend), и из кликов по уточняющим вопросам
+  // (handleAnswerClarify), чтобы не дублировать fetch/обработку ответа дважды.
+  const sendMessageText = async (text, attachmentsToSend = []) => {
+    if (!text && attachmentsToSend.length === 0) return;
 
     const lang = detectLang(text || "ru");
-
-    // Если это первое сообщение — создаём новый чат в истории сайдбара.
     const chatId = activeChat ? activeChat.id : onCreateChat(text);
 
-    onAddMessage(chatId, { role: "user", text, time: nowTime(), attachments });
+    onAddMessage(chatId, { role: "user", text, time: nowTime(), attachments: attachmentsToSend });
     onMessageSent?.();
-    setValue("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
-    const attachmentsToSend = attachments;
-    setAttachments([]);
     setTypingChatId(chatId);
 
     const controller = new AbortController();
@@ -1220,18 +1304,14 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        // Передаём язык, вложения и историю переписки этого чата —
-        // без неё модель не помнит предыдущие сообщения (Ollama /generate
-        // не хранит состояние между запросами сама по себе).
         body: JSON.stringify({
           message: text,
           lang,
-          // Исходная цель чата (тема, на которую он изначально создан) —
-          // бэкенд использует её, чтобы не давать чату уезжать в посторонние
-          // темы (например, обсуждать похудение в чате про монтаж видео).
-          // Для самого первого сообщения чата (activeChat ещё нет) не шлём —
-          // тема как раз этим сообщением и задаётся.
           goalText: activeChat?.goalText || null,
+          // Сообщаем бэкенду, был ли в этом чате уже раунд уточняющих
+          // вопросов — он должен запретить второй раунд детерминированно,
+          // не полагаясь на то, что модель сама "не забудет" это правило.
+          clarifyUsed: messages.some((m) => m.role === "bot" && m.questions && m.questions.length > 0),
           attachments: attachmentsToSend.map((a) => ({
             name: a.name,
             type: a.type,
@@ -1245,15 +1325,21 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
       });
 
       if (!response.ok) {
-        // Раньше тут терялось тело ответа (там как раз лежит настоящий текст
-        // ошибки от бэкенда, например "Ошибка: <сообщение исключения>") —
-        // пользователь видел только код статуса и гадал, что случилось.
         const bodyText = await response.text().catch(() => "");
         throw new Error(bodyText || `Сервер ответил статусом ${response.status}`);
       }
 
-      const reply = await response.text();
-      onAddMessage(chatId, { role: "bot", text: reply, time: nowTime() });
+      // Бэкенд теперь ВСЕГДА возвращает JSON {type: "answer"|"clarify", text, questions?}
+      // вместо голого markdown-текста — это нужно, чтобы фронт мог отдельно
+      // отрисовать кликабельные уточняющие вопросы, а не просто текст с вопросом,
+      // на который пользователю пришлось бы печатать ответ руками.
+      const data = await response.json();
+      onAddMessage(chatId, {
+        role: "bot",
+        text: data?.text ?? "",
+        time: nowTime(),
+        questions: data?.type === "clarify" ? data.questions : null,
+      });
     } catch (err) {
       // Если запрос отменён самим пользователем — не показываем это как ошибку,
       // просто молча прекращаем (сообщение "Остановлено" уже добавлено в handleStop).
@@ -1272,6 +1358,28 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
       setTypingChatId((current) => (current === chatId ? null : current));
       abortControllersRef.current.delete(chatId);
     }
+  };
+
+  const handleSend = async () => {
+    const text = value.trim();
+    if ((!text && attachments.length === 0) || typing) return;
+
+    setValue("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    const attachmentsToSend = attachments;
+    setAttachments([]);
+
+    await sendMessageText(text, attachmentsToSend);
+  };
+
+  // Вызывается из BotMessage, когда пользователь ответил на уточняющие
+  // вопросы (кликнул "Ответить" после выбора вариантов) — отправляет
+  // выбранные ответы как обычное сообщение пользователя, и модель либо
+  // задаёт следующий (последний допустимый) уточняющий вопрос, либо сразу
+  // даёт финальную рекомендацию.
+  const handleAnswerClarify = (combinedAnswerText) => {
+    if (typing) return;
+    sendMessageText(combinedAnswerText, []);
   };
 
   // Останавливает текущую генерацию ответа — как кнопка Stop у Claude/ChatGPT.
@@ -1397,6 +1505,12 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
               time={m.time}
               canAcceptPlan={showCalendarButton}
               onSaveToCalendar={handleSaveToCalendar}
+              // Кликабельные варианты уточняющего вопроса показываем только
+              // на последнем сообщении чата — как и с кнопкой календаря,
+              // не хотим "оживших" кнопок на сообщениях из середины истории
+              // после того как диалог уже продолжился дальше.
+              questions={isLast ? m.questions : null}
+              onAnswerClarify={handleAnswerClarify}
             />
           );
         })}
@@ -2172,6 +2286,47 @@ html, body {
 }
 .calendar-plan-btn-done:hover { background: #f0fdf4; color: #16a34a; }
 .calendar-error-hint { font-size: 11.5px; color: #ef4444; }
+
+.clarify-questions-block {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 10px; padding: 12px 14px;
+  border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa;
+}
+.clarify-question-text {
+  font-size: 13.5px; font-weight: 600; color: #111827; margin-bottom: 6px;
+}
+.clarify-options-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.clarify-option-btn {
+  border: 1px solid #d1d5db; background: #fff; color: #374151;
+  border-radius: 999px; padding: 6px 12px; font-size: 12.5px;
+  font-weight: 500; cursor: pointer;
+}
+.clarify-option-btn:hover { border-color: #0ea5e9; color: #0284c7; }
+.clarify-option-btn-selected {
+  border-color: #0ea5e9; background: #0ea5e9; color: #fff;
+}
+.clarify-option-btn-selected:hover { color: #fff; }
+.clarify-option-btn:disabled { cursor: default; opacity: 0.7; }
+.clarify-actions-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px;
+}
+.clarify-submit-btn {
+  align-self: flex-start;
+  border: 1px solid #0ea5e9; background: #0ea5e9; color: #fff;
+  border-radius: 10px; padding: 8px 16px; font-size: 12.5px;
+  font-weight: 600; cursor: pointer;
+}
+.clarify-submit-btn:disabled { background: #e5e7eb; border-color: #e5e7eb; color: #9ca3af; cursor: default; }
+.clarify-skip-btn {
+  align-self: flex-start;
+  border: 1px solid #d1d5db; background: #fff; color: #6b7280;
+  border-radius: 10px; padding: 8px 16px; font-size: 12.5px;
+  font-weight: 600; cursor: pointer;
+}
+.clarify-skip-btn:hover { border-color: #9ca3af; color: #374151; }
+.clarify-skip-btn:disabled { opacity: 0.6; cursor: default; }
 
 .bubble-footer {
   display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px;

@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Chart, registerables } from 'chart.js'
 import { Calendar, BarChart3, Target, LogOut } from 'lucide-react'
 import AccountSettingsModal from './AccountSettingsModal'
-/*const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'*/
-const API_BASE = import.meta.env.VITE_API_URL || 'https://miapp-backend-srx6.onrender.com'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 Chart.register(...registerables)
 
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
@@ -28,10 +27,10 @@ function RobotIcon({ size = 16 }) {
 // та же схема (жёстко проставленный active на текущем разделе), что и в
 // TopBar из AI.jsx.
 const NAV_ITEMS = [
-  { icon: Calendar, label: 'Календарь', to: '/home' },
-  { icon: RobotIcon, label: 'AI-агент', to: '/ai' },
+  { icon: Calendar, to: '/home' },
+  { icon: RobotIcon, to: '/ai' },
   { icon: BarChart3, label: 'Статистика', active: true, to: '/stats' },
-  { icon: Target, label: 'Цели', to: null },
+  { icon: Target, to: null },
 ]
 
 // Цвета категорий — используются в сайдбаре, графике распределения и ежемесячном прогрессе
@@ -312,82 +311,78 @@ function Stats() {
     <div className="stats-shell">
       <style>{CSS}</style>
 
-      {/* Навбар — та же разметка и те же классы, что и TopBar в AI.jsx,
-          поэтому переход между страницами не "прыгает" по цветам/отступам.
-          Вынесен на верхний уровень (а не внутрь stats-main), чтобы на
-          мобильных он шёл первой полосой — выше календаря и остального
-          контента, а не зажатым между сайдбаром и контентом. */}
-      <header className="topbar">
-        <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: 'pointer' }}>
-          <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
-            {!avatarUrl && (displayName || login ? (displayName || login)[0].toUpperCase() : 'T')}
-          </div>
-          <span className="user-name">{displayName || login || 'tim'}</span>
+      {/* Боковая панель — отдельная карточка на всю высоту экрана, как в AI-агенте */}
+      <div className="stats-sidebar">
+
+        {/* Мини-календарь: листание месяцев + выбор недели кликом */}
+        <MiniCalendar
+          year={displayed.year}
+          month={displayed.month}
+          currentDay={currentDay}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+          weekStart={weekStart}
+          onSelectWeek={handleSelectWeek}
+          onPrevMonth={goPrevMonth}
+          onNextMonth={goNextMonth}
+        />
+
+        {/* Легенда */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: '0.05em', marginBottom: 10 }}>ОБОЗНАЧЕНИЯ</div>
+          {[
+            { color: CATEGORY_COLORS.tasks, label: CATEGORY_LABELS.tasks },
+            { color: CATEGORY_COLORS.goals, label: CATEGORY_LABELS.goals },
+            { color: CATEGORY_COLORS.leisure, label: CATEGORY_LABELS.leisure },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: item.color }} />
+              <span style={{ fontSize: 13, color: '#555' }}>{item.label}</span>
+            </div>
+          ))}
         </div>
-        <nav className="topbar-nav">
-          {NAV_ITEMS.map(item => {
-            const Icon = item.icon
-            const disabled = !item.to
-            return (
-              <button
-                key={item.label}
-                type="button"
-                className={'nav-btn' + (item.active ? ' active' : '') + (disabled ? ' disabled' : '')}
-                onClick={() => item.to && navigate(item.to)}
-                disabled={disabled}
-                title={disabled ? 'Скоро' : undefined}
-              >
-                <Icon size={16} />
-                <span>{item.label}</span>
-              </button>
-            )
-          })}
-        </nav>
-        <button className="logout-btn" type="button" onClick={() => {
-          fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
-            .finally(() => navigate('/login'))
-        }}>
-          <LogOut size={15} />
-          <span>Выйти</span>
-        </button>
-        <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
-      </header>
+      </div>
 
-      <div className="stats-body">
-        {/* Боковая панель — отдельная карточка на всю высоту экрана, как в AI-агенте */}
-        <div className="stats-sidebar">
+      {/* Правая колонка: шапка + контент — шапка вложена сюда, поэтому структурно не заходит на сайдбар */}
+      <div className="stats-main">
 
-          {/* Мини-календарь: листание месяцев + выбор недели кликом */}
-          <MiniCalendar
-            year={displayed.year}
-            month={displayed.month}
-            currentDay={currentDay}
-            currentMonth={currentMonth}
-            currentYear={currentYear}
-            weekStart={weekStart}
-            onSelectWeek={handleSelectWeek}
-            onPrevMonth={goPrevMonth}
-            onNextMonth={goNextMonth}
-          />
-
-          {/* Легенда */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: '0.05em', marginBottom: 10 }}>ОБОЗНАЧЕНИЯ</div>
-            {[
-              { color: CATEGORY_COLORS.tasks, label: CATEGORY_LABELS.tasks },
-              { color: CATEGORY_COLORS.goals, label: CATEGORY_LABELS.goals },
-              { color: CATEGORY_COLORS.leisure, label: CATEGORY_LABELS.leisure },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: item.color }} />
-                <span style={{ fontSize: 13, color: '#555' }}>{item.label}</span>
-              </div>
-            ))}
+        {/* Навбар — та же разметка и те же классы, что и TopBar в AI.jsx,
+            поэтому переход между страницами не "прыгает" по цветам/отступам. */}
+        <header className="topbar">
+          <div className="topbar-user" onClick={() => setSettingsOpen(true)} title="Настройки аккаунта" style={{ cursor: 'pointer' }}>
+            <div className="avatar" style={avatarUrl ? { background: `url(${avatarUrl}) center/cover` } : undefined}>
+              {!avatarUrl && (displayName || login ? (displayName || login)[0].toUpperCase() : 'T')}
+            </div>
+            <span className="user-name">{displayName || login || 'tim'}</span>
           </div>
-        </div>
-
-        {/* Правая колонка: контент */}
-        <div className="stats-main">
+          <nav className="topbar-nav">
+            {NAV_ITEMS.map(item => {
+              const Icon = item.icon
+              const disabled = !item.to
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  className={'nav-btn' + (item.active ? ' active' : '') + (disabled ? ' disabled' : '')}
+                  onClick={() => item.to && navigate(item.to)}
+                  disabled={disabled}
+                  title={disabled ? 'Скоро' : undefined}
+                >
+                  <Icon size={16} />
+                  {item.label}
+                </button>
+              )
+            })}
+          </nav>
+          <button className="logout-btn" type="button" onClick={() => {
+            fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+              .finally(() => navigate('/login'))
+          }}>
+            <LogOut size={15} />
+            <span>Выйти</span>
+          </button>
+          <AccountSettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); loadProfile() }} />
+        </header>
 
         {/* Основной контент */}
         <div className="stats-content">
@@ -539,7 +534,6 @@ function Stats() {
             </>
           )}
         </div>
-        </div>
       </div>
     </div>
   )
@@ -565,15 +559,8 @@ const CSS = `
 .stats-shell {
   height: 100vh;
   display: flex;
-  flex-direction: column;
   background: #f5f5f5;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-.stats-body {
-  flex: 1;
-  display: flex;
-  min-height: 0;
 }
 
 .stats-sidebar {
@@ -645,33 +632,27 @@ const CSS = `
 /* ---------------- Адаптив ---------------- */
 
 @media (max-width: 900px) {
-  .stats-shell { height: auto; min-height: 100vh; overflow: visible; }
-  .stats-body { flex-direction: column; overflow: visible; }
+  .stats-shell { flex-direction: column; height: auto; min-height: 100vh; overflow: visible; }
   .stats-sidebar {
     width: 100%; border-right: none; border-bottom: 1px solid #eee;
     padding: 1rem; overflow-y: visible;
-    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
   }
   .stats-main { overflow: visible; }
 
   .topbar { padding: 12px 14px; gap: 10px; }
-  .topbar-user { flex-shrink: 0; }
   .topbar-nav {
     position: static; transform: none; left: auto;
-    flex: 1; justify-content: center;
     gap: 4px; overflow-x: auto; max-width: 100%;
     -ms-overflow-style: none; scrollbar-width: none;
   }
   .topbar-nav::-webkit-scrollbar { display: none; }
   .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
-  /* На мобильных подпись остаётся только у активного пункта — остальные иконками */
-  .nav-btn:not(.active) span { display: none; }
   .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .logout-btn span { display: none; }
 
   .stats-content { padding: 1rem; }
-  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .charts-grid { grid-template-columns: 1fr; }
   .insights-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
@@ -681,6 +662,7 @@ const CSS = `
   .avatar { width: 28px; height: 28px; }
   .nav-btn { padding: 6px 8px; }
   .stats-page-title { font-size: 19px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
   .insights-grid { grid-template-columns: 1fr; }
 }
 `
