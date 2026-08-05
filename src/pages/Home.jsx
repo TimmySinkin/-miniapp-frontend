@@ -240,6 +240,35 @@ function Home() {
     const days = getDaysInMonth(year, selectedMonth)
     const offset = getFirstDayOffset(year, selectedMonth)
 
+    // Мини-календарь и легенда переиспользуются в двух местах разметки:
+    // в шапке (десктоп) и в отдельном ряду calendar+legend (мобильная
+    // раскладка ≤640px, см. .mobile-cal-legend-row) — чтобы не дублировать логику.
+    const miniCalNode = (
+      <div className="mini-cal">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
+          {WEEKDAYS.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '9px', fontWeight: '600', color: '#aaa' }}>{d}</div>)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+          {Array(offset).fill(null).map((_, i) => <div key={`e${i}`} />)}
+          {Array.from({ length: days }, (_, i) => i + 1).map(day => {
+            const isToday = selectedMonth === currentMonth && day === currentDay
+            const isSelected = day === selectedDay
+            let bg = 'transparent', color = '#555', fontWeight = '400'
+            if (isSelected) { bg = '#534AB7'; color = 'white'; fontWeight = '700' }
+            else if (isToday) { bg = '#EEEDFE'; color = '#534AB7'; fontWeight = '700' }
+            return <div key={day} className="cal-day-light" onClick={() => handleDayClick(day)} style={{ background: bg, color, fontWeight }}>{day}</div>
+          })}
+        </div>
+      </div>
+    )
+
+    const legendPillsNode = CATEGORIES.map(cat => (
+      <span key={cat} className="legend-pill" style={{ background: `${CATEGORY_COLORS[cat]}18`, color: CATEGORY_COLORS[cat] }}>
+        <span className="legend-dot" style={{ background: CATEGORY_COLORS[cat] }} />
+        {CATEGORY_LABELS[cat]}
+      </span>
+    ))
+
     // Небольшая эвристика подбора иконки под конкретное действие (а не только
     // по категории) — так карточки визуально различаются даже внутри одной
     // категории, как на макете (книга/код/кино — разные пункты плана).
@@ -257,10 +286,14 @@ function Home() {
     }
 
     return (
-      <div className="month-page-root" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <div className="month-page-root" style={{ background: '#f5f5f5' }}>
         <style>{`
           @keyframes fadeSlideIn { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
 
+          .month-page-root {
+            min-height: 100vh; /* фолбэк для браузеров без dvh */
+            min-height: 100dvh; /* реальная видимая высота на мобильных — без лишнего скролла из-за адресной строки */
+          }
           .month-page-inner { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
           @media (max-width: 640px) { .month-page-inner { padding: 1rem 0.75rem; } }
 
@@ -270,6 +303,19 @@ function Home() {
           @media (max-width: 480px) { .month-title { font-size: 22px; } }
 
           .mini-cal { width: 230px; max-width: 100%; background: white; border-radius: 12px; padding: 0.7rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+
+          /* ---------- Мобильная раскладка шапки месяца (≤640px) ---------- */
+          .mobile-cal-legend-row { display: none; }
+          .legend-pill-col { display: flex; flex-direction: column; gap: 8px; }
+          @media (max-width: 640px) {
+            .back-btn-light { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+            .back-arrow { display: inline-flex; align-items: center; justify-content: center; width: 16px; line-height: 1; }
+            .month-header-row { justify-content: flex-start; }
+            .mini-cal-desktop, .legend-block-desktop { display: none; }
+            .mobile-cal-legend-row { display: flex; align-items: flex-start; gap: 16px; margin-top: 20px; }
+            .mobile-cal-legend-row .mini-cal { flex: 0 1 230px; }
+            .mobile-cal-legend-row > div:last-child { flex: 1 1 auto; min-width: 0; }
+          }
 
           .task-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
           @media (max-width: 900px) { .task-cards-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -313,41 +359,36 @@ function Home() {
           {/* ШАПКА: НАЗАД + МЕСЯЦ/ГОД + МИНИ-КАЛЕНДАРЬ */}
           <div className="month-header-row">
             <div className="month-header-left">
-              <button className="back-btn-light" onClick={() => { setSelectedMonth(null); setSelectedDay(null) }}>⬅︎ Назад</button>
+              <button className="back-btn-light" onClick={() => { setSelectedMonth(null); setSelectedDay(null) }}>
+                <span className="back-arrow">⬅︎</span> Назад
+              </button>
               <div className="month-title">
                 <span style={{ fontWeight: '800', textTransform: 'uppercase' }}>{MONTHS[selectedMonth]}</span>{' '}
                 <span style={{ fontWeight: '400', color: '#888' }}>{year}</span>
               </div>
             </div>
 
-            <div className="mini-cal">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
-                {WEEKDAYS.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '9px', fontWeight: '600', color: '#aaa' }}>{d}</div>)}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-                {Array(offset).fill(null).map((_, i) => <div key={`e${i}`} />)}
-                {Array.from({ length: days }, (_, i) => i + 1).map(day => {
-                  const isToday = selectedMonth === currentMonth && day === currentDay
-                  const isSelected = day === selectedDay
-                  let bg = 'transparent', color = '#555', fontWeight = '400'
-                  if (isSelected) { bg = '#534AB7'; color = 'white'; fontWeight = '700' }
-                  else if (isToday) { bg = '#EEEDFE'; color = '#534AB7'; fontWeight = '700' }
-                  return <div key={day} className="cal-day-light" onClick={() => handleDayClick(day)} style={{ background: bg, color, fontWeight }}>{day}</div>
-                })}
+            <div className="mini-cal-desktop">
+              {miniCalNode}
+            </div>
+          </div>
+
+          {/* Мобильная раскладка (≤640px): календарь слева, легенда справа в столбик */}
+          <div className="mobile-cal-legend-row">
+            {miniCalNode}
+            <div>
+              <div style={{ fontSize: '13px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Обозначения</div>
+              <div className="legend-pill-col">
+                {legendPillsNode}
               </div>
             </div>
           </div>
 
-          {/* ЛЕГЕНДА КАТЕГОРИЙ */}
-          <div style={{ marginTop: '20px' }}>
+          {/* ЛЕГЕНДА КАТЕГОРИЙ (десктоп) */}
+          <div className="legend-block-desktop" style={{ marginTop: '20px' }}>
             <div style={{ fontSize: '13px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Обозначения</div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {CATEGORIES.map(cat => (
-                <span key={cat} className="legend-pill" style={{ background: `${CATEGORY_COLORS[cat]}18`, color: CATEGORY_COLORS[cat] }}>
-                  <span className="legend-dot" style={{ background: CATEGORY_COLORS[cat] }} />
-                  {CATEGORY_LABELS[cat]}
-                </span>
-              ))}
+              {legendPillsNode}
             </div>
           </div>
 
@@ -456,9 +497,13 @@ function Home() {
 
   /* ─── ГЛАВНАЯ ─── */
   return (
-    <div className="home-root" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div className="home-root" style={{ background: '#f5f5f5' }}>
       <style>{`
-        .home-root { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+        .home-root {
+          padding: 1.5rem; max-width: 1100px; margin: 0 auto;
+          min-height: 100vh; /* фолбэк для браузеров без dvh */
+          min-height: 100dvh; /* реальная видимая высота на мобильных — без лишнего скролла из-за адресной строки */
+        }
         @media (max-width: 640px) { .home-root { padding: 1rem 0.75rem; } }
 
         .home-nav-btn:hover:not(:disabled) { background: #f4f5f9 !important; }
@@ -511,6 +556,11 @@ function Home() {
           .home-nav-btn:not(.active) .home-nav-label { display: none; }
           .home-logout-btn { padding: 7px 10px !important; font-size: 12px !important; gap: 6px !important; }
           .home-logout-btn .home-logout-label { display: none; }
+        }
+        @media (max-width: 400px) {
+          .home-header { padding: 7px 8px; gap: 5px; }
+          .home-user-btn { max-width: 82px; }
+          .home-months-grid { gap: 8px; }
         }
         @media (max-width: 360px) {
           .home-nav-btn { padding: 5px 6px !important; }

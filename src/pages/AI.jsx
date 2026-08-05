@@ -355,17 +355,17 @@ function renderMarkdown(text) {
         .map((cells) => `<tr>${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`)
         .join("");
 
-      return `<table><thead><tr>${theadCells}</tr></thead><tbody>${tbodyRows}</tbody></table>`;
+      return `<div class="md-table-wrap"><table><thead><tr>${theadCells}</tr></thead><tbody>${tbodyRows}</tbody></table></div>`;
     }
   );
 
   // Убираем возможные переносы строк внутри уже сформированных блоков (h*, ul, table)
-  escaped = escaped.replace(/(<\/(?:h2|h3|h4|h5|h6|ul|table)>)\n/g, "$1");
+  escaped = escaped.replace(/(<\/(?:h2|h3|h4|h5|h6|ul|div)>)\n/g, "$1");
   // Двойной перенос — новый абзац, одиночный — <br/>
   escaped = escaped
     .split(/\n{2,}/)
     .map((block) =>
-      /^<(h2|h3|h4|h5|h6|ul|table)/.test(block) ? block : `<p>${block.replace(/\n/g, "<br/>")}</p>`
+      /^<(h2|h3|h4|h5|h6|ul|div)/.test(block) ? block : `<p>${block.replace(/\n/g, "<br/>")}</p>`
     )
     .join("");
 
@@ -688,36 +688,32 @@ function Sidebar({
                 <span>История чатов</span>
               </div>
 
-              {today.length > 0 && (
-                <>
-                  <div className="history-group-label">Сегодня</div>
-                  <ul className="chat-list">{today.map(renderChatRow)}</ul>
-                </>
+              <div className={`history-list-wrap${historyChats.length > 10 ? ' scrollable' : ''}`}>
+                {today.length > 0 && (
+                  <>
+                    <div className="history-group-label">Сегодня</div>
+                    <ul className="chat-list">{today.map(renderChatRow)}</ul>
+                  </>
+                )}
+
+                {yesterday.length > 0 && (
+                  <>
+                    <div className="history-group-label">Вчера</div>
+                    <ul className="chat-list">{yesterday.map(renderChatRow)}</ul>
+                  </>
+                )}
+
+                {older.length > 0 && (
+                  <>
+                    <div className="history-group-label">Ранее</div>
+                    <ul className="chat-list">{older.map(renderChatRow)}</ul>
+                  </>
+                )}
+              </div>
+
+              {!hasAnyHistory && (
+                <p className="empty-hint">Начните диалог — он появится здесь</p>
               )}
-
-              {yesterday.length > 0 && (
-                <>
-                  <div className="history-group-label">Вчера</div>
-                  <ul className="chat-list">{yesterday.map(renderChatRow)}</ul>
-                </>
-              )}
-
-              {older.length > 0 && (
-            <>
-              <div className="history-group-label">Ранее</div>
-              <ul className="chat-list">{older.map(renderChatRow)}</ul>
-            </>
-          )}
-
-          {!hasAnyHistory && (
-            <p className="empty-hint">Начните диалог — он появится здесь</p>
-          )}
-
-          {hasAnyHistory && (
-            <button className="show-more-btn" type="button">
-              Показать больше <span className="chev">v</span>
-            </button>
-          )}
         </section>
           </>
         )}
@@ -996,6 +992,22 @@ function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar, questions, on
   const allAnswered = questions && questions.length > 0 &&
     questions.every((q) => !!selections[q.id]);
 
+  // Ищем среди вопросов вопрос про дату старта плана. Сначала по id="start_date"
+  // (см. промпт), но ЛОКАЛЬНАЯ модель (Ollama/qwen2.5) не всегда надёжно
+  // проставляет именно этот id в JSON — поэтому есть запасной вариант:
+  // вопрос с ровно двумя опциями "Сегодня"/"Завтра" тоже считается вопросом
+  // про старт, даже если id не совпал. Это тот же сигнал по сути (сами
+  // варианты ответа модель обязана оставлять неизменными по промпту),
+  // просто более устойчивый к тому, что модель забыла/перепутала id.
+  const startDateQuestion = questions?.find(
+    (q) =>
+      q.id === "start_date" ||
+      (Array.isArray(q.options) &&
+        q.options.length === 2 &&
+        q.options.includes("Сегодня") &&
+        q.options.includes("Завтра"))
+  );
+
   const handleSubmitAnswers = () => {
     if (!allAnswered || answered) return;
     setAnswered(true);
@@ -1005,7 +1017,11 @@ function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar, questions, on
     const combined = questions
       .map((q) => `${q.question} ${selections[q.id]}`)
       .join("\n");
-    onAnswerClarify(combined);
+    const startOffsetDays = startDateQuestion
+      ? (selections[startDateQuestion.id] === "Завтра" ? 1 : 0)
+      : null;
+    console.log("[clarify] questions:", questions, "| startDateQuestion:", startDateQuestion, "| startOffsetDays:", startOffsetDays);
+    onAnswerClarify(combined, null, startOffsetDays);
   };
 
   // "Пропустить" — пользователь не хочет отвечать на уточняющие вопросы.
@@ -1015,13 +1031,21 @@ function BotMessage({ text, time, canAcceptPlan, onSaveToCalendar, questions, on
   // эту фразу и отвечает широким набором (например, по 2-3 варианта на
   // каждую предложенную категорию), либо, если исходный запрос был
   // фактическим/поисковым, просто даёт содержательный ответ по существу.
+  // В сам чат при этом попадает короткая displayText ("Пропустить — выбери
+  // сам за меня"), а не эта служебная инструкция целиком — иначе от лица
+  // пользователя в истории повисает длинная фраза, которую он не писал.
+  // Если среди вопросов был "когда начать" — пропуск = "Сегодня" (offset 0),
+  // явно, а не полагаясь на то, что модель правильно поймёт это из текста.
   const handleSkip = () => {
     if (answered) return;
     setAnswered(true);
+    const startOffsetDays = startDateQuestion ? 0 : null;
     onAnswerClarify(
       "Пропускаю уточнение — не важно, выбери сам за меня. Предложи широкий вариант: " +
       "возьми понемногу из разных категорий/вариантов, которые ты предлагал (например, " +
-      "по 2–3 штуки на каждый), а не зацикливайся на одном варианте."
+      "по 2–3 штуки на каждый), а не зацикливайся на одном варианте.",
+      "Пропустить — выбери сам за меня",
+      startOffsetDays
     );
   };
 
@@ -1156,7 +1180,7 @@ function TypingMessage() {
   );
 }
 
-function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessageSent, login }) {
+function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onSetStartOffset, onMessageSent, login }) {
   const [value, setValue] = useState("");
   const textareaRef = useRef(null);
   const [typingChatId, setTypingChatId] = useState(null);
@@ -1181,6 +1205,13 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
   // ввода и вложения — они относятся к предыдущему контексту.
   useEffect(() => {
     setValue("");
+    // Освобождаем blob URL превью картинок перед сбросом — иначе при частом
+    // переключении чатов с непустыми вложениями объекты остаются в памяти
+    // до перезагрузки страницы (URL.createObjectURL не убирается сборщиком
+    // мусора сам по себе).
+    attachments.forEach((a) => {
+      if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+    });
     setAttachments([]);
     setTemplatesOpen(false);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -1213,6 +1244,8 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
 
   const TEXT_EXTENSIONS = [".txt", ".md", ".csv", ".json", ".log"];
   const MAX_TEXT_CHARS = 20000; // не отправляем модели гигантские файлы целиком
+  const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 МБ — больше почти всегда не нужно модели и раздувает base64-payload
+  const MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024; // 2 МБ на входной файл, дальше уже дорого читать в память ради обрезки
 
   const readFileAsText = (file) =>
     new Promise((resolve, reject) => {
@@ -1237,12 +1270,24 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
   const handleFilesSelected = async (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = ""; // чтобы можно было выбрать тот же файл повторно
+    await processFiles(files);
+  };
 
+  // Общая обработка файлов — используется и инпутом (кнопка "Прикрепить"),
+  // и drag & drop на область чата, чтобы не дублировать логику дважды.
+  const processFiles = async (files) => {
     for (const file of files) {
       const isImage = file.type.startsWith("image/");
       const isText = TEXT_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
 
       if (isImage) {
+        if (file.size > MAX_IMAGE_BYTES) {
+          alert(
+            `Файл "${file.name}" слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
+              `Максимум для изображений — ${MAX_IMAGE_BYTES / 1024 / 1024} МБ.`
+          );
+          continue;
+        }
         try {
           const base64 = await readFileAsBase64(file);
           setAttachments((prev) => [
@@ -1259,15 +1304,28 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
           alert(`Не удалось прочитать файл ${file.name}`);
         }
       } else if (isText) {
+        if (file.size > MAX_TEXT_FILE_BYTES) {
+          alert(
+            `Файл "${file.name}" слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
+              `Максимум для текстовых файлов — ${MAX_TEXT_FILE_BYTES / 1024 / 1024} МБ.`
+          );
+          continue;
+        }
         try {
           let text = await readFileAsText(file);
-          if (text.length > MAX_TEXT_CHARS) {
+          const wasTruncated = text.length > MAX_TEXT_CHARS;
+          if (wasTruncated) {
             text = text.slice(0, MAX_TEXT_CHARS) + "\n...[файл обрезан]";
           }
           setAttachments((prev) => [
             ...prev,
             { id: crypto.randomUUID(), name: file.name, type: "text", content: text },
           ]);
+          if (wasTruncated) {
+            alert(
+              `Файл "${file.name}" длиннее ${MAX_TEXT_CHARS} символов — прикреплена только первая часть.`
+            );
+          }
         } catch {
           alert(`Не удалось прочитать файл ${file.name}`);
         }
@@ -1280,19 +1338,91 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
   };
 
   const removeAttachment = (id) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    setAttachments((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
   };
+
+  // Drag & drop файлов в любом месте страницы (не только над областью чата) —
+  // альтернатива кнопке "Прикрепить". Вешаем на window, а не на конкретный
+  // div, т.к. пользователь может отпустить файл над сайдбаром/шапкой —
+  // раньше в этом случае ничего не происходило без объяснения.
+  // dragCounterRef нужен, т.к. dragenter/dragleave срабатывают при пересечении
+  // границ ЛЮБЫХ элементов внутри окна, а не только границ самого окна —
+  // без счётчика isDragOver "мигал" бы при каждом движении курсора.
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  useEffect(() => {
+    const handleWindowDragEnter = (e) => {
+      if (e.dataTransfer?.types && Array.from(e.dataTransfer.types).includes("Files")) {
+        e.preventDefault();
+        dragCounterRef.current += 1;
+        setIsDragOver(true);
+      }
+    };
+
+    const handleWindowDragOver = (e) => {
+      // Без preventDefault браузер по умолчанию откроет файл в новой
+      // вкладке вместо срабатывания drop — актуально для ЛЮБОЙ точки
+      // страницы, не только над chat-area.
+      e.preventDefault();
+    };
+
+    const handleWindowDragLeave = (e) => {
+      e.preventDefault();
+      dragCounterRef.current -= 1;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+      }
+    };
+
+    const handleWindowDrop = async (e) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (files.length === 0) return;
+      await processFiles(files);
+    };
+
+    window.addEventListener("dragenter", handleWindowDragEnter);
+    window.addEventListener("dragover", handleWindowDragOver);
+    window.addEventListener("dragleave", handleWindowDragLeave);
+    window.addEventListener("drop", handleWindowDrop);
+    return () => {
+      window.removeEventListener("dragenter", handleWindowDragEnter);
+      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("dragleave", handleWindowDragLeave);
+      window.removeEventListener("drop", handleWindowDrop);
+    };
+  }, []);
 
   // Общая логика отправки сообщения в /api/ai/chat — используется и из
   // текстового поля ввода (handleSend), и из кликов по уточняющим вопросам
   // (handleAnswerClarify), чтобы не дублировать fetch/обработку ответа дважды.
-  const sendMessageText = async (text, attachmentsToSend = []) => {
+  const sendMessageText = async (text, attachmentsToSend = [], displayText = null) => {
     if (!text && attachmentsToSend.length === 0) return;
 
     const lang = detectLang(text || "ru");
     const chatId = activeChat ? activeChat.id : onCreateChat(text);
 
-    onAddMessage(chatId, { role: "user", text, time: nowTime(), attachments: attachmentsToSend });
+    // displayText — то, что видит пользователь в своём пузыре сообщения; в
+    // само поле text сообщения всегда пишем ПОЛНЫЙ текст (то, что ушло
+    // модели), т.к. именно text используется дальше как история для
+    // следующих запросов — иначе модель в следующих репликах "забудет"
+    // формулировку служебной инструкции (например, после "Пропустить").
+    // displayText — только для рендера пузыря, в API/историю не идёт.
+    onAddMessage(chatId, {
+      role: "user",
+      text,
+      displayText: displayText ?? undefined,
+      time: nowTime(),
+      attachments: attachmentsToSend,
+    });
     onMessageSent?.();
     setTypingChatId(chatId);
 
@@ -1377,9 +1507,18 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
   // выбранные ответы как обычное сообщение пользователя, и модель либо
   // задаёт следующий (последний допустимый) уточняющий вопрос, либо сразу
   // даёт финальную рекомендацию.
-  const handleAnswerClarify = (combinedAnswerText) => {
+  const handleAnswerClarify = (combinedAnswerText, displayText = null, startOffsetDays = null) => {
     if (typing) return;
-    sendMessageText(combinedAnswerText, []);
+    // startOffsetDays приходит только когда среди уточняющих вопросов был
+    // вопрос с id="start_date" — сохраняем его на сам чат (а не парсим потом
+    // текст истории регуляркой в handleSaveToCalendar), чтобы дата старта
+    // плана определялась однозначно, независимо от того, как модель
+    // сформулировала сам вопрос.
+    console.log("[clarify] handleAnswerClarify: startOffsetDays =", startOffsetDays, "| activeChat?.id =", activeChat?.id);
+    if (startOffsetDays !== null && activeChat) {
+      onSetStartOffset(activeChat.id, startOffsetDays);
+    }
+    sendMessageText(combinedAnswerText, [], displayText);
   };
 
   // Останавливает текущую генерацию ответа — как кнопка Stop у Claude/ChatGPT.
@@ -1406,6 +1545,13 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
 
     const totalDays = activeChat.plan?.totalDays || parseDurationDays(activeChat.goalText) || 30;
 
+    // Дата старта плана берётся из activeChat.startOffsetDays — она проставляется
+    // детерминированно в handleAnswerClarify по id="start_date" вопроса, а не
+    // угадывается парсингом текста истории (ненадёжно: модель формулирует
+    // сам вопрос своими словами, и текстовый паттерн может не совпасть).
+    const startOffsetDays = activeChat.startOffsetDays || 0;
+    console.log("[save] activeChat.startOffsetDays =", activeChat.startOffsetDays, "| used startOffsetDays =", startOffsetDays);
+
     try {
       const planRes = await fetch(`${API_BASE}/api/ai/plan`, {
         method: "POST",
@@ -1428,11 +1574,13 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
       console.log('Grouped:', JSON.stringify(grouped, null, 2));
 
       const today = new Date();
+      today.setDate(today.getDate() + startOffsetDays);
       const savedDateStrs = [];
       for (const [dayOffset, tasks] of Object.entries(grouped)) {
         const date = new Date(today);
         date.setDate(today.getDate() + parseInt(dayOffset, 10) - 1);
         const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
 
         const newTasks = tasks.map((t) => ({ text: t.action, goalCount: t.goal, progress: null, category: t.category || 'goals' }));
 
@@ -1452,14 +1600,15 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
         savedDateStrs.push(dateStr);
       }
 
-      // План привязывается к сегодняшней дате как дню 1 (бэкенд /api/ai/plan
-      // не принимает дату старта) — поэтому явно проговариваем в чате,
-      // на какие реальные даты легла запись, чтобы пользователь не гадал
-      // и модель могла честно ответить на вопрос "на какую дату записал?".
+      // startOffsetDays уже посчитан выше (0 = сегодня, 1 = завтра) — раньше
+      // здесь был жёстко зашит текст "сегодняшняя дата" независимо от
+      // реального выбора пользователя, из-за чего подтверждение врало,
+      // когда план стартовал завтра.
       const label = formatSavedDatesLabel(savedDateStrs);
+      const startDayLabel = startOffsetDays === 1 ? "завтрашняя дата" : "сегодняшняя дата";
       onAddMessage(activeChat.id, {
         role: "bot",
-        text: `✅ Записано в календарь на ${savedDateStrs.length > 1 ? "период" : "дату"}: **${label}** (день 1 плана = сегодняшняя дата).`,
+        text: `✅ Записано в календарь на ${savedDateStrs.length > 1 ? "период" : "дату"}: **${label}** (день 1 плана = ${startDayLabel}).`,
         time: nowTime(),
       });
 
@@ -1480,11 +1629,16 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
 
   return (
     <div className="chat-area">
+      {isDragOver && (
+        <div className="chat-dropzone-overlay chat-dropzone-overlay-global">
+          <div className="chat-dropzone-hint">Отпустите файл, чтобы прикрепить</div>
+        </div>
+      )}
       <div className="chat-scroll" ref={scrollRef}>
         <WelcomeMessage />
         {messages.map((m, i) => {
           if (m.role === "user") {
-            return <UserMessage key={i} text={m.text} time={m.time} attachments={m.attachments} />;
+            return <UserMessage key={i} text={m.displayText || m.text} time={m.time} attachments={m.attachments} />;
           }
           const isLast = i === messages.length - 1;
           // Кнопка "Записать в календарь" появляется, если ИЗНАЧАЛЬНАЯ цель
@@ -1564,6 +1718,38 @@ function ChatArea({ activeChat, onCreateChat, onAddMessage, onAddPlan, onMessage
               // Shift+Enter — обычный перенос строки, браузер сам вставит \n
               // в textarea (в отличие от <input>, где перенос невозможен
               // физически — именно поэтому раньше "ничего не происходило").
+            }}
+            onPaste={(e) => {
+              // Вставка скриншота/картинки из буфера обмена (Ctrl+V) — самый
+              // частый способ прикрепить, например, скрин ошибки, без
+              // промежуточного сохранения файла на диск. Текст вставляется
+              // как обычно браузером, картинки из clipboardData.items уходим
+              // обрабатывать через тот же processFiles, что и drag & drop.
+              const items = Array.from(e.clipboardData?.items || []);
+              const files = items
+                .filter((item) => item.kind === "file")
+                .map((item) => item.getAsFile())
+                .filter(Boolean)
+                // Переименовываем в дату+время ТОЛЬКО картинки — у них
+                // действительно почти всегда generic-имя вроде image.png.
+                // Файлы других типов (например, скопированный в проводнике
+                // .txt) приходят с настоящим именем и расширением — трогать
+                // его нельзя, иначе .txt превратится в что-то вроде .plain
+                // и перестанет проходить проверку TEXT_EXTENSIONS ниже.
+                .map((file) => {
+                  if (!file.type.startsWith("image/")) return file;
+                  const ts = new Date()
+                    .toLocaleString("sv-SE") // формат YYYY-MM-DD HH:mm:ss
+                    .replace(" ", "-")
+                    .replace(/:/g, "");
+                  const ext = (file.type.split("/")[1] || "png").split("+")[0];
+                  const renamed = `pasted-image-${ts}.${ext}`;
+                  return new File([file], renamed, { type: file.type });
+                });
+              if (files.length > 0) {
+                e.preventDefault();
+                processFiles(files);
+              }
             }}
             placeholder="Напишите цель или задайте вопрос..."
           />
@@ -1874,6 +2060,17 @@ export default function AIAgentDashboard() {
     if (typeof window !== "undefined" && window.innerWidth <= 900) setSidebarOpen(false);
   };
 
+  // Сохраняет выбранную пользователем дату старта плана (0 = сегодня,
+  // 1 = завтра) прямо на объект чата — проставляется в момент ответа на
+  // уточняющий вопрос с id="start_date", читается позже в handleSaveToCalendar.
+  // Только фронтенд-состояние, на бэкенд не отправляется (сам план и так
+  // сохраняется с уже посчитанными датами через /api/tasks/...).
+  const handleSetStartOffset = (chatId, offsetDays) => {
+    setChats((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, startOffsetDays: offsetDays } : c))
+    );
+  };
+
   // Активирует план как "активный" в панели слева. Раньше вызывалось только
   // по клику на отдельную кнопку в чате — теперь вызывается АВТОМАТИЧЕСКИ
   // при успешном "Записать в календарь" (см. handleSaveToCalendar), поэтому
@@ -1943,6 +2140,7 @@ export default function AIAgentDashboard() {
           onCreateChat={handleCreateChat}
           onAddMessage={handleAddMessage}
           onAddPlan={handleAddPlan}
+          onSetStartOffset={handleSetStartOffset}
           onMessageSent={handleMessageSent}
           login={login}
         />
@@ -2136,12 +2334,15 @@ html, body {
   padding: 8px 8px 2px;
 }
 
-.show-more-btn {
-  display: flex; align-items: center; gap: 4px;
-  background: none; border: none; color: var(--accent); font-size: 12.5px;
-  font-weight: 600; cursor: pointer; padding: 8px; align-self: flex-start;
+.history-list-wrap.scrollable {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px;
 }
-.chev { font-size: 13px; }
+.history-list-wrap.scrollable::-webkit-scrollbar { width: 5px; }
+.history-list-wrap.scrollable::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+.history-list-wrap.scrollable::-webkit-scrollbar-track { background: transparent; }
 
 .panel-card {
   background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
@@ -2230,7 +2431,35 @@ html, body {
 
 /* ---------------- Chat area ---------------- */
 
-.chat-area { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chat-area { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; }
+
+.chat-dropzone-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.12);
+  border: 2px dashed rgba(37, 99, 235, 0.6);
+  border-radius: 12px;
+  pointer-events: none;
+  backdrop-filter: blur(1px);
+}
+.chat-dropzone-overlay-global {
+  position: fixed;
+  inset: 0;
+  border-radius: 0;
+  z-index: 1000;
+}
+.chat-dropzone-hint {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #2563eb;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 .chat-scroll {
   flex: 1; overflow-y: auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 18px;
 }
@@ -2243,7 +2472,7 @@ html, body {
   display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
 }
 
-.bubble { border-radius: 16px; padding: 16px 18px; font-size: 14px; line-height: 1.55; }
+.bubble { border-radius: 16px; padding: 16px 18px; font-size: 14px; line-height: 1.55; min-width: 0; max-width: 100%; }
 .bot-bubble { background: var(--panel); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
 .user-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
 
@@ -2378,10 +2607,16 @@ html, body {
 }
 .md-content strong { font-weight: 700; }
 .md-content em { font-style: italic; }
+.md-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 8px 0 12px;
+}
 .md-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 8px 0 12px;
+  margin: 0;
   font-size: 13px;
 }
 .md-content th, .md-content td {
@@ -2561,5 +2796,18 @@ html, body {
   .bubble { padding: 13px 14px; font-size: 13.5px; }
   .composer-hint { display: none; }
   .attachment-chip { max-width: 140px; }
+}
+
+/* Узкие смартфоны (~390-400px, напр. iPhone/Pixel в портрете) */
+@media (max-width: 400px) {
+  .topbar { padding: 8px; gap: 4px; }
+  .nav-btn { padding: 5px 7px; font-size: 11.5px; }
+  .user-name { max-width: 54px; }
+  .chat-scroll { padding: 14px 10px; }
+  .composer { padding: 8px 10px 10px; }
+  .composer-input-row { padding: 5px 5px 5px 12px; }
+  .composer-input-row textarea { font-size: 13px; }
+  .chip-btn { padding: 6px 9px; font-size: 11.5px; }
+  .msg-row, .user-row { max-width: 100%; }
 }
 `;

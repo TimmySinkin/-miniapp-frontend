@@ -469,6 +469,17 @@ function Login() {
           .social-btn-wide { font-size: 12.5px; padding: 10px 0; }
           .divider-row span { font-size: 11.5px; }
         }
+
+        /* Узкие смартфоны (~390-400px, напр. iPhone/Pixel в портрете) */
+        @media (max-width: 400px) {
+          .login-card { padding: 1.75rem 1rem; }
+          .login-title { font-size: 21px; }
+          .glass-input2 { padding: 13px 40px 13px 14px; font-size: 14.5px; }
+          .floating-label { font-size: 14.5px; }
+          .social-btn-wide { font-size: 11.5px; padding: 9px 0; gap: 6px; }
+          .modal-card { padding: 1.25rem 1rem; }
+          .modal-card.onboarding, .modal-card.forgot { width: 100%; }
+        }
       `}</style>
 
             <div style={{
@@ -656,10 +667,10 @@ function Login() {
                         boxShadow: '0 12px 48px rgba(0,0,0,0.5)'
                     }}>
                         <h3 style={{ color: 'white', fontSize: '20px', fontWeight: '700', marginBottom: '6px', fontFamily: 'Georgia, serif' }}>
-                            Как к вам обращаться?
+                            Пропишите ваш будующий логин.
                         </h3>
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13.5px', marginBottom: '20px' }}>
-                            Это будет ваш логин для входа в приложение — можно оставить предложенный вариант или придумать свой.
+                            Это будет ваша часть данных для входа в приложение — можно оставить предложенный вариант или придумать свой.
                         </p>
                         <div className="input-group" style={{ marginBottom: '8px' }}>
                             <input

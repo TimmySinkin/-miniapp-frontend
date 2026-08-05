@@ -489,6 +489,13 @@ function Register() {
           .otp-phone { min-height: 460px; padding: 44px 18px 22px; }
           .otp-digit-box { width: 48px; height: 54px; font-size: 20px; }
         }
+
+        /* Узкие смартфоны (~390-400px, напр. iPhone/Pixel в портрете) */
+        @media (max-width: 400px) {
+          .register-form-panel { padding: 1.5rem 1rem; }
+          .otp-stage-wrap { max-width: 240px; }
+          .otp-digit-box { width: 42px; height: 48px; font-size: 18px; }
+        }
       `}</style>
 
       <div className="register-image-panel" style={{
@@ -561,7 +568,7 @@ function Register() {
                   className={'reg-floating-label' + (loginFocused || login ? ' floated' : '')}
                   htmlFor="reg-login-field"
                 >
-                  Имя
+                  Логин
                 </label>
               </div>
 
@@ -581,7 +588,7 @@ function Register() {
                   className={'reg-floating-label' + (emailFocused || email ? ' floated' : '')}
                   htmlFor="reg-email-field"
                 >
-                  Email
+                  Почта
                 </label>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: '-6px 0 12px 4px' }}>

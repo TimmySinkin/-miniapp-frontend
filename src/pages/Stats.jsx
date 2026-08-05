@@ -27,10 +27,10 @@ function RobotIcon({ size = 16 }) {
 // та же схема (жёстко проставленный active на текущем разделе), что и в
 // TopBar из AI.jsx.
 const NAV_ITEMS = [
-  { icon: Calendar, to: '/home' },
-  { icon: RobotIcon, to: '/ai' },
+  { icon: Calendar, label: 'Календарь', to: '/home' },
+  { icon: RobotIcon, label: 'AI-агент', to: '/ai' },
   { icon: BarChart3, label: 'Статистика', active: true, to: '/stats' },
-  { icon: Target, to: null },
+  { icon: Target, label: 'Цели', to: null },
 ]
 
 // Цвета категорий — используются в сайдбаре, графике распределения и ежемесячном прогрессе
@@ -109,10 +109,9 @@ function MiniCalendar({ year, month, currentDay, currentMonth, currentYear, week
         const isSelectedWeek = weekStart && isoDate(rowMonday) === isoDate(weekStart)
         return (
           <div key={r}
-            onClick={() => onSelectWeek(rowMonday)}
             style={{
               display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2,
-              cursor: 'pointer', borderRadius: 6, padding: '1px 0', marginBottom: 1,
+              borderRadius: 8, padding: '3px 4px', marginBottom: 1,
               background: isSelectedWeek ? '#FBF6E9' : 'transparent',
               boxShadow: isSelectedWeek ? 'inset 0 0 0 1px #EF9F27' : 'none',
             }}
@@ -120,18 +119,25 @@ function MiniCalendar({ year, month, currentDay, currentMonth, currentYear, week
             {Array.from({ length: 7 }, (_, c) => {
               const cellIndex = r * 7 + c
               const day = cellIndex - offset + 1
+              // Пустые ячейки (дни соседнего месяца, попавшие в эту строку сетки)
+              // намеренно НЕ кликабельны: раньше клик обрабатывался на уровне
+              // всей строки, и клик по пустому месту рядом с датой мог выбрать
+              // понедельник из ДРУГОГО месяца без какой-либо видимой причины —
+              // выглядело как "неделя откатилась на прошлый месяц" без объяснений.
               if (day < 1 || day > days) return <div key={c} />
               const isToday = month === currentMonth && year === currentYear && day === currentDay
               const cellDate = new Date(year, month, day)
               const isPast = cellDate < new Date(currentYear, currentMonth, currentDay)
               return (
-                <div key={c} style={{
-                  textAlign: 'center', fontSize: 11, padding: '3px 0',
-                  borderRadius: 4,
-                  background: isToday ? '#534AB7' : isPast ? '#EEEDFE' : 'transparent',
-                  color: isToday ? 'white' : isPast ? '#534AB7' : '#ccc',
-                  fontWeight: isToday ? 700 : 400
-                }}>{day}</div>
+                <div key={c}
+                  onClick={() => onSelectWeek(rowMonday)}
+                  style={{
+                    textAlign: 'center', fontSize: 11, padding: '3px 0',
+                    borderRadius: 4, cursor: 'pointer',
+                    background: isToday ? '#534AB7' : isPast ? '#EEEDFE' : 'transparent',
+                    color: isToday ? 'white' : isPast ? '#534AB7' : '#ccc',
+                    fontWeight: isToday ? 700 : 400
+                  }}>{day}</div>
               )
             })}
           </div>
@@ -315,20 +321,22 @@ function Stats() {
       <div className="stats-sidebar">
 
         {/* Мини-календарь: листание месяцев + выбор недели кликом */}
-        <MiniCalendar
-          year={displayed.year}
-          month={displayed.month}
-          currentDay={currentDay}
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-          weekStart={weekStart}
-          onSelectWeek={handleSelectWeek}
-          onPrevMonth={goPrevMonth}
-          onNextMonth={goNextMonth}
-        />
+        <div className="sidebar-calendar">
+          <MiniCalendar
+            year={displayed.year}
+            month={displayed.month}
+            currentDay={currentDay}
+            currentMonth={currentMonth}
+            currentYear={currentYear}
+            weekStart={weekStart}
+            onSelectWeek={handleSelectWeek}
+            onPrevMonth={goPrevMonth}
+            onNextMonth={goNextMonth}
+          />
+        </div>
 
         {/* Легенда */}
-        <div>
+        <div className="sidebar-legend">
           <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: '0.05em', marginBottom: 10 }}>ОБОЗНАЧЕНИЯ</div>
           {[
             { color: CATEGORY_COLORS.tasks, label: CATEGORY_LABELS.tasks },
@@ -369,7 +377,7 @@ function Stats() {
                   title={disabled ? 'Скоро' : undefined}
                 >
                   <Icon size={16} />
-                  {item.label}
+                  <span>{item.label}</span>
                 </button>
               )
             })}
@@ -582,6 +590,9 @@ const CSS = `
   overflow: hidden;
 }
 
+.sidebar-calendar { width: 100%; }
+.sidebar-legend { width: 100%; }
+
 /* ---------------- Топбар (идентично AI.jsx) ---------------- */
 
 .topbar {
@@ -636,17 +647,23 @@ const CSS = `
   .stats-sidebar {
     width: 100%; border-right: none; border-bottom: 1px solid #eee;
     padding: 1rem; overflow-y: visible;
+    flex-direction: row; flex-wrap: nowrap; align-items: flex-start; gap: 1rem;
   }
+  .sidebar-calendar { width: auto; flex: 1 1 auto; min-width: 0; }
+  .sidebar-legend { width: auto; flex: 0 0 auto; padding-top: 4px; }
   .stats-main { overflow: visible; }
 
   .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-user { flex-shrink: 0; }
   .topbar-nav {
     position: static; transform: none; left: auto;
+    flex: 1; justify-content: center;
     gap: 4px; overflow-x: auto; max-width: 100%;
     -ms-overflow-style: none; scrollbar-width: none;
   }
   .topbar-nav::-webkit-scrollbar { display: none; }
   .nav-btn { padding: 7px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .nav-btn:not(.active) span { display: none; }
   .user-name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .logout-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .logout-btn span { display: none; }
@@ -657,13 +674,23 @@ const CSS = `
   .insights-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 480px) {
   .topbar { padding: 10px; gap: 6px; }
   .avatar { width: 28px; height: 28px; }
   .nav-btn { padding: 6px 8px; }
   .stats-page-title { font-size: 19px; }
   .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
   .insights-grid { grid-template-columns: 1fr; }
+}
+
+/* Узкие смартфоны (~390-400px, напр. iPhone/Pixel в портрете) */
+@media (max-width: 400px) {
+  .stats-content { padding: 0.75rem; }
+  .stats-page-title { font-size: 17px; }
+  .topbar { padding: 8px; gap: 4px; }
+  .nav-btn { padding: 6px 7px; font-size: 12px; }
+  .user-name { max-width: 54px; }
+  .sidebar-legend span { font-size: 12px; }
 }
 `
 
